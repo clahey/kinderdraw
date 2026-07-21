@@ -29,7 +29,7 @@ This also means a Widgets action, including New Picture, can only start once no 
 
 ## Feature Gating
 
-User Experience reads the current UX configuration — an age-slider value or a custom per-feature toggle set — from Config, and uses it to decide which Widgets controls are composed onto the screen and which optional behaviors (such as whether OS back navigation is ever re-enabled — see OS Navigation and Process Lifecycle) are active. A feature that's off is omitted entirely rather than shown disabled: a visible-but-inert control invites a tap that does nothing, which the toddler-usability tenet treats as a broken interaction rather than a safe default.
+User Experience reads Config's resolved per-feature values (see the Config LLD's Resolved Features) — never the underlying age-slider value or custom toggle map directly — and uses them to decide which Widgets controls are composed onto the screen and which optional behaviors (such as whether OS back navigation is ever re-enabled — see OS Navigation and Process Lifecycle) are active. A feature that's off is omitted entirely rather than shown disabled: a visible-but-inert control invites a tap that does nothing, which the toddler-usability tenet treats as a broken interaction rather than a safe default.
 
 Today the configuration gates the canvas feature set as a single bundle (color picker, New Picture) — there's no per-feature independence yet. Finer-grained gating is deferred until the feature set grows past what one bundle covers.
 
@@ -89,5 +89,5 @@ Feedback belonging to a single control's own activation (a button's press animat
 - Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines User Experience as Kid Canvas's composition root.
 - Root HLD: `docs/high-level-design.md` — Approach (age-adaptive canvas UX, first-launch adult setup), Tenets (toddler usability over platform convention; reversible actions default to forgiving), System Design (shared data store and UX config flow).
 - Sibling: `docs/intent/kid-canvas/painting/painting-design.md` — the stroke model and save/clear operations this LLD's Lifecycle Behavior orchestrates.
-- `docs/intent/config/config-design.md` — UX configuration reactivity and storage shape.
+- `docs/intent/config/config-design.md` — UX configuration reactivity, storage shape, and resolved-feature accessors.
 - `docs/intent/image-storage/image-storage-design.md` — saved-drawing write failures.
