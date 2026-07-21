@@ -9,6 +9,8 @@ prefix: IMAGES
 
 Image Storage holds saved drawings — the record a parent browses and manages from the Companion App, and the destination Painting writes a finished drawing to. It's declared once as a shared Kotlin interface (see the HLD's cross-platform data-layer boundary decision); Painting and the Companion App depend only on that interface, never on a platform's concrete implementation. On Android it's shared in-process by the Kid Canvas and Companion App (see the HLD's "one shared local data store, not two" decision). The planned Linux app gets its own, separate implementation, kept behaviorally consistent with Android's via shared EARS specs.
 
+Whatever backs an implementation, entries persist durably: a saved drawing outlives the process that wrote it, and is still there for a later implementation instance to read — not just held in memory for the lifetime of one running instance.
+
 ## Data Shape
 
 One entry per saved drawing: an identifier, a creation timestamp, and a rendered raster image. The identifier and creation timestamp can each be supplied by the caller creating the entry, or left for Image Storage to generate — an ordinary save doesn't need any storage-specific logic (id generation, clock access) to create an entry, but a caller with its own reason to control either value isn't blocked from supplying one.
@@ -16,6 +18,12 @@ One entry per saved drawing: an identifier, a creation timestamp, and a rendered
 Creating with an id that already has an entry updates that entry in place, replacing its raster image, rather than creating a second entry or failing as a conflict. The timestamp is only touched if the caller supplies one explicitly on that call — an update that omits it leaves the entry's existing timestamp untouched rather than refreshing it to the update's write time. A caller that wants to save a drawing incrementally as it's drawn can reuse the same id across repeated creates, keeping the original creation time pinned unless it explicitly chooses to overwrite it.
 
 Painting writes new entries; the Companion App lists, reads, and deletes them.
+
+## Android Storage Backend
+
+Android's implementation persists every saved drawing through the device's shared MediaStore, the same mechanism any camera or gallery app uses, in its own dedicated album (e.g. `Pictures/kinderdraw`) rather than mixed into the general camera roll. MediaStore is the source of truth for these entries, not a mirror of some other private copy: create, list, read, and delete all act directly on the MediaStore entry. A saved drawing's identifier is its MediaStore entry's identity, and its creation timestamp is stored in MediaStore's `DATE_TAKEN` metadata field.
+
+This is what makes saved drawings show up in the device's own Photos/Gallery app without any extra step. Whether a drawing is ever backed up off-device isn't Image Storage's call to make: MediaStore-shared media is outside the scope of the app's own Auto Backup declaration, so it follows whatever the user's own photo-backup app (Google Photos or equivalent) does with the device's photo albums generally — including that app's own per-album backup selection, which is exactly the lever a parent who doesn't want kinderdraw's album backed up already has. MediaStore itself is a core Android framework API, present on de-Googled/free-software Android builds as well as stock Android; only cloud backup specifically depends on whether the user has a backup app like Google Photos installed at all, which is their own environment, not a kinderdraw dependency.
 
 ## Reads Are Reactive
 
@@ -35,14 +43,18 @@ A create or delete call can fail — storage full, an I/O error — and Image St
 | Id/timestamp assignment at creation | Caller may optionally supply either or both; Image Storage generates any that are omitted | Image Storage always generates both; caller always supplies both | Keeps an ordinary save simple (nothing to generate), while leaving room for a caller that needs to control the id or timestamp itself. |
 | Create called with an id that already has an entry | Updates (overwrites) that entry's raster image in place, rather than creating a second entry or failing as a conflict | Reject as a conflict; silently create a second entry under a different id | Makes create idempotent by id, which is what a caller saving a drawing incrementally as it's drawn needs — it can reuse one id across repeated creates without tracking whether an earlier call already landed. |
 | Timestamp field on an update | Left unchanged unless the caller explicitly supplies a new value on that call | Always refresh to the update's write time | Keeps "creation timestamp" meaning what its name says — when the entry was first created — even once an id can be reused, without needing a separate last-modified field. A caller that wants the timestamp to move can still do so explicitly. |
+| Android storage backend | MediaStore is the source of truth for every saved drawing, unconditionally, in its own dedicated album | App-private storage, with no Photos-app visibility; a Config toggle gating MediaStore vs. private storage per drawing; private storage as the source of truth, separately mirrored into MediaStore | A single source of truth avoids dual-write and delete-sync bugs between two copies. A dedicated album keeps drawings out of the general camera roll, and the user's own photo-backup app (e.g. Google Photos) already offers per-album backup selection — the exact control an in-app toggle would otherwise exist to provide — so no separate kinderdraw-level setting is needed. |
+| Creation timestamp's MediaStore mapping | Stored in the MediaStore entry's `DATE_TAKEN` field | Rely on file-system timestamps (`DATE_ADDED`/`DATE_MODIFIED`) instead | `DATE_TAKEN` is set explicitly on insert/update, independent of file-system timestamps, so it can hold whatever value the caller supplied or Image Storage generated (see Id/timestamp assignment above) rather than whatever the file system happens to record. |
 
 ## Open Questions & Future Decisions
 
 ### Deferred
 
-1. Concrete storage engine/technology isn't chosen here — an implementation decision, likely to differ per platform.
+1. Concrete storage engine/technology for Linux isn't chosen here — an implementation decision.
 2. What Painting/User Experience does when a save fails is deferred to those components.
 3. Whether the Companion App's drawing list needs paging or limits at scale (many saved drawings accumulated over months of use) isn't addressed — deferred until real usage data exists.
+4. The exact MediaStore album name isn't fixed here — an implementation detail.
+5. Whether Linux has any equivalent to a shared media index (a Pictures-folder convention GTK/desktop file managers surface, say) is undecided, deferred to Linux's own implementation work.
 
 ## References
 
