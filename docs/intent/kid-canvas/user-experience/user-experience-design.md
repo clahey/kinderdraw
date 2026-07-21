@@ -53,7 +53,7 @@ The current, in-progress drawing must survive any lifecycle event the OS handles
 
 ## Interaction Feedback
 
-Actions User Experience orchestrates across components answer the toddler through the action's own visible effect, not through any separate dialog, confirmation, or extra interaction step:
+Actions that User Experience orchestrates across components answer the toddler through the action's own visible effect, not through any separate dialog, confirmation, or extra interaction step:
 
 - **Color selection** — Widgets owns the visual mechanism (e.g. which swatch shows as active); User Experience wires the selection straight into Painting's active stroke color, so the next stroke drawn is simply in the new color — no separate acknowledgment step required.
 - **New Picture** — the cleared canvas is itself the feedback: the toddler sees the drawing surface go blank, confirming the action took effect. No separate confirmation banner or toast is shown, consistent with no blocking dialogs on the kid canvas.

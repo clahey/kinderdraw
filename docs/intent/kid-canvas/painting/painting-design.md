@@ -7,7 +7,9 @@ prefix: CANVAS-PAINT
 
 ## Context and Design Philosophy
 
-Painting converts the single live pointer stream User Experience routes to it — per the User Experience LLD's Input Arbitration, Painting only ever receives a pointer that didn't land on any Widgets control, and only one live pointer at a time — into stroke data, renders it to the drawing surface as it happens, and holds the accumulated drawing until User Experience asks it to save or clear. Painting doesn't arbitrate input itself and doesn't know about Widgets; its only input is the single pointer stream it's handed.
+Painting converts the live pointer stream(s) User Experience routes to it — per the User Experience LLD's Input Arbitration, Painting only ever receives a pointer that didn't land on any Widgets control — into stroke data, renders it to the drawing surface as it happens, and holds the accumulated drawing until User Experience asks it to save or clear. Painting doesn't arbitrate input itself and doesn't know about Widgets; its only input is whatever pointer stream it's handed.
+
+Today that's a single pointer at a time — User Experience's arbitration rule hands Painting one live gesture and drops every other concurrent pointer before Painting ever sees it. That's a deliberate simplification for a minimum testable product, not a permanent architectural limit; see Open Questions.
 
 This is the component the HLD's Compose Multiplatform sharing decision is about: the touch-to-stroke logic and its on-screen rendering are the same implementation across Android and Linux (and iOS later), not just specs kept in sync by convention.
 
@@ -55,10 +57,11 @@ The current, uncleared drawing must also survive the OS-managed lifecycle events
 
 ### Deferred
 
-1. The default brush's line width and the drawing surface's background/appearance are visual-design decisions, not fixed here.
-2. Whether the default brush needs path smoothing is deferred until its unsmoothed polyline is actually seen in practice.
-3. Whether and how brush choice ever becomes user-facing — a Widgets control, an age-gated bundle entry, or otherwise — is not decided; today it's purely an internal architectural seam with a single implementation behind it.
-4. How the shared Compose Multiplatform canvas embeds inside the native GTK+ shell on Linux is an open technical question at the HLD level, inherited here without further resolution.
+1. Whether Painting should ever track multiple concurrent live strokes (true multi-touch drawing) is open. Today it only ever receives one live pointer, because User Experience's arbitration hands it a single gesture and drops the rest — chosen for implementation simplicity in a minimum testable product, not because multi-touch drawing is undesirable. Supporting it later would mean Painting tracking several in-progress strokes at once, keyed by pointer, not just relaxing the upstream arbitration rule.
+2. The default brush's line width and the drawing surface's background/appearance are visual-design decisions, not fixed here.
+3. Whether the default brush needs path smoothing is deferred until its unsmoothed polyline is actually seen in practice.
+4. Whether and how brush choice ever becomes user-facing — a Widgets control, an age-gated bundle entry, or otherwise — is not decided; today it's purely an internal architectural seam with a single implementation behind it.
+5. How the shared Compose Multiplatform canvas embeds inside the native GTK+ shell on Linux is an open technical question at the HLD level, inherited here without further resolution.
 
 ## References
 
