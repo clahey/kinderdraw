@@ -34,7 +34,7 @@ Painting renders progressively as a stroke is drawn — each new point extends t
 Painting exposes three operations to User Experience, which alone decides when to call them (see the User Experience LLD's Lifecycle Behavior):
 
 - `isEmpty()` — true only if no strokes have been recorded since the last clear.
-- `save()` — renders the current drawing to a raster image and writes it to the shared data store as a new saved drawing (see the Data Store LLD). Painting owns the write itself; it's the component with the direct relationship to the data store for drawings.
+- `save()` — renders the current drawing to a raster image and writes it to Image Storage as a new saved drawing (see the Image Storage LLD). Painting owns the write itself; it's the component with the direct relationship to Image Storage.
 - `clear()` — discards all recorded strokes and resets the visible drawing surface to blank.
 
 User Experience calls `isEmpty()` first, calls `save()` only if it returns false, then always calls `clear()`. Painting itself never decides whether to save — only whether there's anything to save.
@@ -48,8 +48,8 @@ The current, uncleared drawing must also survive the OS-managed lifecycle events
 | Zero-movement tap | Recorded as a single-point stroke, rendered as a mark by its brush | Discard taps with no movement as not a real stroke | A toddler tapping the canvas expects a visible mark for any touch; discarding silent no-ops contradicts the immediate-response philosophy from the User Experience LLD. |
 | Stroke rendering | Progressive, point-by-point as the stroke is drawn | Render only on pointer-up, once the full stroke is known | The toddler is actively touching the screen; waiting until lift to show anything would mean no visible response while they're mid-action. |
 | Brush as a first-class, pluggable concept, with a single implementation and no selection UI | Painting's architecture defines a brush abstraction now; exactly one brush (fixed-width solid polyline, no smoothing) is implemented, and nothing exposes a way to choose between brushes | Hardcode the single line-rendering algorithm directly into Painting with no abstraction; build out a brush-selection UI now alongside the abstraction | Keeps adding a second brush later to a matter of a new implementation rather than restructuring Painting, without committing to any product surface (control, config field) before there's a real need for one. |
-| Who writes a saved drawing to the data store | Painting itself, on a `save()` call from User Experience | User Experience writes to the data store directly, using drawing data pulled from Painting | Matches the Kid Canvas sub-HLD's system diagram, where Painting owns the "writes drawings" edge to the store, and keeps data-store access confined to the component that already owns the drawing data. |
-| Saved-drawing format | A rendered raster image | Vector/stroke data | The HLD's Non-Goals exclude re-editing or undo history, so nothing ever needs to reconstruct strokes from a saved drawing — only display and delete it (see the Data Store LLD). |
+| Who writes a saved drawing to Image Storage | Painting itself, on a `save()` call from User Experience | User Experience writes to Image Storage directly, using drawing data pulled from Painting | Matches the Kid Canvas sub-HLD's system diagram, where Painting owns the "writes drawings" edge to the store, and keeps Image Storage access confined to the component that already owns the drawing data. |
+| Saved-drawing format | A rendered raster image | Vector/stroke data | The HLD's Non-Goals exclude re-editing or undo history, so nothing ever needs to reconstruct strokes from a saved drawing — only display and delete it (see the Image Storage LLD). |
 
 ## Open Questions & Future Decisions
 
@@ -65,4 +65,4 @@ The current, uncleared drawing must also survive the OS-managed lifecycle events
 - Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines Painting as converting a pointer/touch sequence into stroke data and rendering it.
 - Root HLD: `docs/high-level-design.md` — Approach (Compose Multiplatform canvas sharing), Key Design Decisions (canvas implemented once, shared across platforms).
 - Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Input Arbitration (source of Painting's single pointer stream), Lifecycle Behavior (when save/clear are called), OS Navigation and Process Lifecycle (saved-instance-state survival).
-- `docs/intent/data-store/data-store-design.md` — saved-drawing storage shape and write API.
+- `docs/intent/image-storage/image-storage-design.md` — saved-drawing storage shape and write API.
