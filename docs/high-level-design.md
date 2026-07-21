@@ -8,26 +8,26 @@ Existing toddler drawing apps rely on standard OS/UI click and gesture conventio
 
 A native Android app, built in Kotlin with Jetpack Compose, with two screens sharing one local data store:
 
-- **Toddler canvas** — the primary drawing surface. Input is read via Compose's raw pointer APIs (`Modifier.pointerInput` / `awaitPointerEventScope`) rather than `clickable()`/Material gesture recognizers, so touch targets, hit-testing, and gesture handling are fully custom-built for toddler motor control: large forgiving targets, no long-press requirement, no accidental double-trigger, no reliance on precise taps.
+- **Toddler canvas** — the primary drawing surface. Input, including its on-screen controls (color picker, new-picture button, and similar chrome) and not just the drawing surface itself, is read via Compose's raw pointer APIs (`Modifier.pointerInput` / `awaitPointerEventScope`) rather than `clickable()`/Material gesture recognizers, so touch targets, hit-testing, and gesture handling are fully custom-built for toddler motor control: large forgiving targets, no long-press requirement, no accidental double-trigger, no reliance on precise taps. Most drawing apps presumably use raw pointer input for the drawing surface itself; the distinguishing choice here is applying it to the controls too, rather than falling back to standard `clickable()` semantics for buttons.
 - **Companion app** — a standard Material 3 Compose screen for parents/caregivers: browsing and managing saved drawings, adjusting settings, and controlling which UX features are active on the toddler canvas. Reached via a separate entry point from the toddler canvas (its own launcher icon or a distinct in-app path), not a challenge gate. Runs in the same APK and process as the toddler canvas, sharing the same on-device data store, so no sync layer is needed between the two.
 - **Age-adaptive canvas UX** — the companion app controls which canvas features are enabled, in one of two modes: an age slider that maps to a preset bundle of enabled features appropriate to that age, or a custom mode where a parent toggles each canvas feature on or off individually. The canvas reads this configuration from the shared data store at runtime.
 
 A Linux desktop implementation is planned to follow soon after the Android app. Its companion/settings screen and app shell are planned as native GTK+ (Kotlin/Native), giving that part of the app a genuinely native Linux feel. The toddler canvas is implemented via Compose Multiplatform instead: what's shared across Android and Linux (and iOS later) is the logic that turns a touch/pointer sequence into stroke/drawing data — not just business logic like the age-adaptive model — plus painting that data to screen. How a Compose Multiplatform-rendered canvas embeds inside the native GTK+ shell on Linux is an open technical question, deferred to that component's own LLD.
 
-iOS support is a real goal, not currently ruled out, but is blocked for now: building for iOS requires a Mac/Xcode toolchain the team doesn't have access to. When that's resolved, Compose Multiplatform (reusing existing Kotlin code, non-native Skia rendering) and Flutter or native SwiftUI (closer to native look, at the cost of a new language) become live options to weigh — Flutter is not actually more "native" on iOS than Compose Multiplatform (both paint their own widgets rather than using real UIKit/SwiftUI); Flutter's Cupertino widget set is just a more complete iOS-style skin than Compose Multiplatform currently ships.
+iOS support is a real goal, not currently ruled out, but is blocked for now: building for iOS requires a Mac/Xcode toolchain the team doesn't have access to. When that's resolved, the plan mirrors Linux's split: a native SwiftUI companion app for genuinely native widgets, with the canvas shared via Compose Multiplatform. iOS doesn't package apps as an APK the way Android does (it uses an app bundle/`.ipa` instead), and whether a SwiftUI companion and a Compose Multiplatform canvas can coexist inside one such bundle — and how they'd communicate — is an open technical question, deferred until iOS work actually starts.
 
 Lifecycle actions the toddler can trigger accidentally (starting a new picture, for example) default to a non-interrupting behavior — the current drawing is auto-saved before the canvas clears — rather than surfacing a confirmation dialog the toddler cannot parse or dismiss meaningfully.
 
 ## Target Users
 
 - **Toddlers** (roughly ages 2–4) — the primary users of the drawing canvas. Cannot read, cannot reliably perform precise taps or long-presses, need large tolerant touch targets and immediate, forgiving feedback.
-- **Parents/caregivers** — secondary users, via the companion screen. Need to browse and manage what their child has drawn, without ads or purchase prompts interrupting either screen.
+- **Parents/caregivers** — secondary users, via the companion screen. Need to browse and manage what their child has drawn, without ads interrupting either screen.
 
 ## Goals
 
 - A toddler can draw, change color, and start a new picture without needing an adult's help after a brief demonstration.
 - No blocking confirmation dialogs are ever shown on the toddler canvas.
-- The app is free with no ads and no in-app purchases, on any platform.
+- The app is free with no ads, on any platform.
 - The companion screen gives a parent standard, familiar native controls (Material 3 on Android, GTK+ on Linux) to review and manage saved drawings.
 - A parent can tune which canvas features are active for their child — either by setting an age (mapping to a preset bundle) or by toggling each feature individually in a custom mode.
 - The app reaches the Linux desktop soon after the initial Android release, with a native GTK+ companion/shell and a shared Compose Multiplatform canvas. (How the canvas embeds inside the GTK+ shell is still an open technical question — see Approach.)
@@ -39,13 +39,13 @@ Lifecycle actions the toddler can trigger accidentally (starting a new picture, 
 - A shared cross-platform UI toolkit for companion/shell screens (e.g. Compose Multiplatform for Desktop, Flutter). Each platform's companion screen uses that platform's own native toolkit instead. (This does not apply to the canvas, which is deliberately shared via Compose Multiplatform — see Approach and Tenets.)
 - Multiplayer, accounts, or cloud sync.
 - Advanced drawing tools (layers, undo history, brush engines) beyond simple freehand strokes and color selection — the canvas is scoped to what a toddler uses.
-- Monetization via ads or purchases, on any platform.
+- Advertising, on any platform.
 
 ## Tenets
 
 - **Toddler usability over platform convention, on the canvas.** Where a choice pits toddler-friendly interaction against a platform's standard UI conventions (click ripple, drag thresholds, dismiss-on-outside-tap), the toddler canvas leans toward toddler usability, on every platform. The companion screen leans the opposite way — it follows each platform's native conventions (Material 3 on Android, GTK+ HIG on Linux), since parents benefit from platform familiarity rather than custom affordances.
 - **Reversible actions default to forgiving, not confirmed.** An action the toddler can trigger by accident defaults to a non-blocking, recoverable behavior (auto-save-then-clear) rather than a confirmation prompt, as long as the action is actually recoverable. A genuinely irreversible, high-consequence action would still warrant a different treatment.
-- **Free and open-source.** kinderdraw is free and open-source software, not a commercial product — no revenue model exists to weigh against, so ads and purchase prompts are never on the table as a trade-off, even when they'd be the simpler or more conventional build choice. Source is publicly available under an open license.
+- **Free and open-source.** kinderdraw is free and open-source software — ads are never on the table as a monetization trade-off, even when they'd be the simpler or more conventional build choice. Source is publicly available under an open license.
 - **Each platform's companion/shell UI uses that platform's own native toolkit, not a shared cross-platform rendering layer.** Android's companion screen ships Material 3; Linux's ships GTK+. This costs a duplicate implementation per platform instead of one shared codebase — accepted in exchange for that screen feeling native. The toddler canvas is a deliberate exception: it's already a custom, non-native-widget UI on every platform by design (see the toddler-usability tenet above), so sharing the logic that turns a touch sequence into a drawing — and its on-screen painting — across platforms via Compose Multiplatform doesn't cost the same native-feel trade-off this tenet protects.
 
 ## System Design
@@ -59,7 +59,8 @@ graph TD
 
     App --> Canvas
     App --> Companion
-    Canvas --> Store
+    Canvas -- writes drawings --> Store
+    Companion <-- reads/manages drawings --> Store
     Companion -- writes UX config --> Store
     Store -- reads UX config --> Canvas
 ```
