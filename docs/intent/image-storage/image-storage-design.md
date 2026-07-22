@@ -19,15 +19,21 @@ Creating with an id that already has an entry updates that entry in place, repla
 
 Painting writes new entries; the Companion App lists, reads, and deletes them.
 
+## Reads Are Reactive
+
+The saved-drawing list is reactive/observable, for the same reason as Config: a caller subscribes and immediately receives the current list, then is notified as entries are added or removed by any means — not just through Image Storage's own create/delete operations — rather than re-reading on its own schedule.
+
 ## Android Storage Backend
 
 Android's implementation persists every saved drawing through the device's shared MediaStore, the same mechanism any camera or gallery app uses, in its own dedicated album (e.g. `Pictures/kinderdraw`) rather than mixed into the general camera roll. MediaStore is the source of truth for these entries, not a mirror of some other private copy: create, list, read, and delete all act directly on the MediaStore entry. A saved drawing's identifier is its MediaStore entry's identity, and its creation timestamp is stored in MediaStore's `DATE_TAKEN` metadata field.
 
 This is what makes saved drawings show up in the device's own Photos/Gallery app without any extra step. Whether a drawing is ever backed up off-device isn't Image Storage's call to make: MediaStore-shared media is outside the scope of the app's own Auto Backup declaration, so it follows whatever the user's own photo-backup app (Google Photos or equivalent) does with the device's photo albums generally — including that app's own per-album backup selection, which is exactly the lever a parent who doesn't want kinderdraw's album backed up already has. MediaStore itself is a core Android framework API, present on de-Googled/free-software Android builds as well as stock Android; only cloud backup specifically depends on whether the user has a backup app like Google Photos installed at all, which is their own environment, not a kinderdraw dependency.
 
-## Reads Are Reactive
+Because MediaStore is the source of truth, Android's implementation observes MediaStore's own change notifications for the app's album — a drawing added or removed by any means, including directly through the system Gallery/Photos app, is reflected the same way a call through Image Storage's own API would be.
 
-The saved-drawing list is reactive/observable, for the same reason as Config: a caller subscribes and immediately receives the current list, then is notified as entries are added or deleted, rather than re-reading on its own schedule.
+## Linux Storage Backend
+
+Linux's implementation persists saved drawings as files under the user's Pictures directory, in their own subdirectory (default `~/Pictures/kinderdraw`), configurable to a different location. It observes that directory for changes via the platform's filesystem-watch mechanism (inotify, most likely through GLib's `GFileMonitor` given the GTK+ shell), so a drawing added or removed by any means — including directly through a file manager — is reflected the same way Android's MediaStore observation is.
 
 ## Write Failures
 
@@ -45,16 +51,18 @@ A create or delete call can fail — storage full, an I/O error — and Image St
 | Timestamp field on an update | Left unchanged unless the caller explicitly supplies a new value on that call | Always refresh to the update's write time | Keeps "creation timestamp" meaning what its name says — when the entry was first created — even once an id can be reused, without needing a separate last-modified field. A caller that wants the timestamp to move can still do so explicitly. |
 | Android storage backend | MediaStore is the source of truth for every saved drawing, unconditionally, in its own dedicated album | App-private storage, with no Photos-app visibility; a Config toggle gating MediaStore vs. private storage per drawing; private storage as the source of truth, separately mirrored into MediaStore | A single source of truth avoids dual-write and delete-sync bugs between two copies. A dedicated album keeps drawings out of the general camera roll, and the user's own photo-backup app (e.g. Google Photos) already offers per-album backup selection — the exact control an in-app toggle would otherwise exist to provide — so no separate kinderdraw-level setting is needed. |
 | Creation timestamp's MediaStore mapping | Stored in the MediaStore entry's `DATE_TAKEN` field | Rely on file-system timestamps (`DATE_ADDED`/`DATE_MODIFIED`) instead | `DATE_TAKEN` is set explicitly on insert/update, independent of file-system timestamps, so it can hold whatever value the caller supplied or Image Storage generated (see Id/timestamp assignment above) rather than whatever the file system happens to record. |
+| Source of change notifications | Platform-native observation covering changes from any source: MediaStore's own change notifications on Android, a filesystem watch (inotify) on Linux | Only signal on changes made through Image Storage's own create/delete calls | Both platforms have a native way to observe changes to the underlying store from any source, and since that store is the source of truth, a change made outside Image Storage's own API (deleting a drawing from the system Gallery app, or from a file manager) is just as real a change as one made through it — a parent expects the Companion App's list to reflect it either way. |
+| Linux default storage location | `~/Pictures/kinderdraw`, a subdirectory of the user's Pictures directory | A location under the app's own private config/data directory, not the user's Pictures directory | Mirrors the Android decision's spirit — drawings live somewhere the user would naturally look for photos/pictures — even though Linux has no MediaStore-equivalent shared media index to place them in. |
 
 ## Open Questions & Future Decisions
 
 ### Deferred
 
-1. Concrete storage engine/technology for Linux isn't chosen here — an implementation decision.
+1. The file format and any accompanying metadata storage for Linux's implementation isn't chosen here — an implementation decision.
 2. What Painting/User Experience does when a save fails is deferred to those components.
 3. Whether the Companion App's drawing list needs paging or limits at scale (many saved drawings accumulated over months of use) isn't addressed — deferred until real usage data exists.
 4. The exact MediaStore album name isn't fixed here — an implementation detail.
-5. Whether Linux has any equivalent to a shared media index (a Pictures-folder convention GTK/desktop file managers surface, say) is undecided, deferred to Linux's own implementation work.
+5. How a parent reconfigures Linux's storage location (a Companion/shell setting, a config file, an environment variable) isn't decided here.
 
 ## References
 
