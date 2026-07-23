@@ -19,8 +19,10 @@
 ## Save and Clear
 
 - [ ] **CANVAS-PAINT-008**: The system shall expose an operation that reports true only if no strokes have been recorded since the drawing surface was last cleared.
-- [ ] **CANVAS-PAINT-009**: When the save operation is called, the system shall render the current drawing to a raster image and write it to Image Storage (see the Image Storage LLD) as a new saved-drawing entry.
+- [D] **CANVAS-PAINT-009**: When the save operation is called, the system shall render the current drawing to a raster image and write it to Image Storage (see the Image Storage LLD) as a new saved-drawing entry.
+- [D] **CANVAS-PAINT-012**: If the save operation's write to Image Storage fails, then the system shall report that failure to its own caller rather than treating the drawing as saved.
 - [ ] **CANVAS-PAINT-010**: When the clear operation is called, the system shall discard all recorded strokes and reset the visible drawing surface to blank.
+- [ ] **CANVAS-PAINT-013**: When the clear operation is called while a stroke is still in progress (the pointer hasn't lifted), the system shall finalize that stroke's points-so-far as a completed stroke, discard it along with everything else, and immediately begin a new stroke continuing from the same pointer location and carrying forward the interrupted stroke's own color and brush, without querying Active Stroke Settings again. (A subsequent call to the isEmpty check reports false, since that replacement stroke already has one point — see CANVAS-PAINT-002.)
 
 ## Lifecycle Survival
 
