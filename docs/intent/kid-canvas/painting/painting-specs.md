@@ -27,3 +27,4 @@
 ## Lifecycle Survival
 
 - [ ] **CANVAS-PAINT-011**: When the OS suspends and resumes the process within the scope of its own saved-instance-state mechanism (e.g. a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current uncleared drawing's recorded strokes and restore the same visible drawing surface, without invoking the save operation.
+- [ ] **CANVAS-PAINT-014**: The system shall store each captured point as a fraction of the drawing surface's width and height at the moment it was captured, and render it at the corresponding position of the drawing surface's current width and height, so a stroke captured before a proportional resize (e.g. a device rotation preserved under CANVAS-PAINT-011) still renders at the same relative position afterward.
