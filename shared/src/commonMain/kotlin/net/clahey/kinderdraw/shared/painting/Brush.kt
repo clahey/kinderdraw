@@ -1,6 +1,5 @@
 package net.clahey.kinderdraw.shared.painting
 
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
 /**
@@ -9,8 +8,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  * so far, every time that list grows, rather than being told only the
  * newest point: a brush that needs prior points to interpolate (e.g. a
  * future smoothing brush) can do so without keeping its own state across
- * calls.
+ * calls. Color is a property of the brush instance itself, fixed at its
+ * own construction, not a per-render input.
  */
 interface Brush {
-    fun DrawScope.render(points: List<Point>, color: Color)
+    fun DrawScope.render(points: List<Point>)
 }

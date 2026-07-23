@@ -1,13 +1,11 @@
 package net.clahey.kinderdraw.shared.painting
 
-import androidx.compose.ui.graphics.Color
-
 /**
  * One live pointer's down-to-up sequence — see the Painting LLD's Stroke
- * Model. Color and brush are fixed at construction and never change; points
- * accumulate as the pointer moves.
+ * Model. The brush (including whatever color it renders with) is fixed at
+ * construction and never changes; points accumulate as the pointer moves.
  */
-class Stroke(val color: Color, val brush: Brush) {
+class Stroke(val brush: Brush) {
     private val mutablePoints = mutableListOf<Point>()
 
     val points: List<Point> get() = mutablePoints

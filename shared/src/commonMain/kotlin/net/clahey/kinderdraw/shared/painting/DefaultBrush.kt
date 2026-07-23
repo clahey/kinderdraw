@@ -8,11 +8,15 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 /**
  * Today's only [Brush]: a fixed-width solid line connecting points as a
  * polyline, with no curve-fitting or smoothing — see the Painting LLD's
- * Brushes section.
+ * Brushes section. [color] is fixed at construction; producing a
+ * differently colored instance means constructing a new [DefaultBrush].
  */
-class DefaultBrush(private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX) : Brush {
+class DefaultBrush(
+    private val color: Color,
+    private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX,
+) : Brush {
     // @spec CANVAS-PAINT-005, CANVAS-PAINT-006
-    override fun DrawScope.render(points: List<Point>, color: Color) {
+    override fun DrawScope.render(points: List<Point>) {
         val pixelPoints = points.map { it.toOffset(size) }
         if (pixelPoints.size == 1) {
             drawCircle(color = color, radius = strokeWidthPx / 2f, center = pixelPoints.first())

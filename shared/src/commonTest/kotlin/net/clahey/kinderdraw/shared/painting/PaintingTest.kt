@@ -1,6 +1,5 @@
 package net.clahey.kinderdraw.shared.painting
 
-import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,34 +14,31 @@ class PaintingTest {
     @Test
     fun pointerDownQueriesActiveStrokeSettingsExactlyOnce() {
         val brush = FakeBrush()
-        val settings = FakeActiveStrokeSettings(color = Color.Red, brush = brush)
+        val settings = FakeActiveStrokeSettings(brush = brush)
         val painting = Painting()
 
         painting.onPointerDown(p0, settings)
         painting.onPointerMove(p1)
         painting.onPointerUp()
 
-        assertEquals(1, settings.colorQueryCount)
         assertEquals(1, settings.brushQueryCount)
     }
 
     // @spec CANVAS-PAINT-001
     @Test
-    fun strokeColorAndBrushStayFixedForItsDurationDespiteLaterSettingsChanges() {
+    fun strokeBrushStaysFixedForItsDurationDespiteLaterSettingsChanges() {
         val originalBrush = FakeBrush()
         val laterBrush = FakeBrush()
-        val settings = FakeActiveStrokeSettings(color = Color.Red, brush = originalBrush)
+        val settings = FakeActiveStrokeSettings(brush = originalBrush)
         val painting = Painting()
 
         painting.onPointerDown(p0, settings)
-        settings.color = Color.Blue
         settings.brush = laterBrush
         painting.onPointerMove(p1)
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
 
         assertEquals(1, originalBrush.renderCalls.size)
-        assertEquals(Color.Red, originalBrush.renderCalls.single().color)
         assertTrue(laterBrush.renderCalls.isEmpty())
     }
 
@@ -58,7 +54,7 @@ class PaintingTest {
 
         assertFalse(painting.isEmpty())
         testDrawScope { with(painting) { render() } }
-        assertEquals(listOf(p0), brush.renderCalls.single().points)
+        assertEquals(listOf(p0), brush.renderCalls.single())
     }
 
     // @spec CANVAS-PAINT-003
@@ -75,10 +71,7 @@ class PaintingTest {
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
 
-        assertEquals(
-            listOf(listOf(p0), listOf(p1, p2)),
-            brush.renderCalls.map { it.points },
-        )
+        assertEquals(listOf(listOf(p0), listOf(p1, p2)), brush.renderCalls)
     }
 
     // @spec CANVAS-PAINT-004
@@ -93,7 +86,7 @@ class PaintingTest {
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
 
-        assertEquals(listOf(p0, p1), brush.renderCalls.single().points)
+        assertEquals(listOf(p0, p1), brush.renderCalls.single())
     }
 
     // @spec CANVAS-PAINT-007
@@ -108,10 +101,7 @@ class PaintingTest {
         painting.onPointerMove(p1)
         testDrawScope { with(painting) { render() } }
 
-        assertEquals(
-            listOf(listOf(p0), listOf(p0, p1)),
-            brush.renderCalls.map { it.points },
-        )
+        assertEquals(listOf(listOf(p0), listOf(p0, p1)), brush.renderCalls)
     }
 
     // @spec CANVAS-PAINT-008
@@ -153,16 +143,15 @@ class PaintingTest {
     @Test
     fun clearWhileAStrokeIsLiveFinalizesItAndReplacesItInheritingSettings() {
         val brush = FakeBrush()
-        val settings = FakeActiveStrokeSettings(color = Color.Green, brush = brush)
+        val settings = FakeActiveStrokeSettings(brush = brush)
         val painting = Painting()
 
         painting.onPointerDown(p0, settings)
         painting.onPointerMove(p1)
         painting.clear()
 
-        // The replacement stroke carries the interrupted stroke's own settings
+        // The replacement stroke carries the interrupted stroke's own brush
         // forward rather than asking Active Stroke Settings again.
-        assertEquals(1, settings.colorQueryCount)
         assertEquals(1, settings.brushQueryCount)
         assertFalse(painting.isEmpty())
 
@@ -171,8 +160,6 @@ class PaintingTest {
         testDrawScope { with(painting) { render() } }
 
         // Continues from the interrupted stroke's last point (p1), not p0 or a fresh start.
-        assertEquals(1, brush.renderCalls.size)
-        assertEquals(listOf(p1, p2), brush.renderCalls.single().points)
-        assertEquals(Color.Green, brush.renderCalls.single().color)
+        assertEquals(listOf(listOf(p1, p2)), brush.renderCalls)
     }
 }

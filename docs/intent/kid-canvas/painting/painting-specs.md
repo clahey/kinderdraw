@@ -2,13 +2,13 @@
 
 ## Stroke Model
 
-- [x] **CANVAS-PAINT-001**: When a pointer goes down on the drawing surface, the system shall begin recording a stroke as an ordered list of points, querying Active Stroke Settings (Painting's resolved color/brush source, owned by User Experience) once at that moment for the stroke's color and brush, and fixing those returned values for the stroke's entire duration regardless of any later change at the source.
+- [x] **CANVAS-PAINT-001**: When a pointer goes down on the drawing surface, the system shall begin recording a stroke as an ordered list of points, querying Active Stroke Settings (Painting's resolved brush source, owned by User Experience) once at that moment for the stroke's brush, and fixing that returned brush for the stroke's entire duration regardless of any later change at the source.
 - [x] **CANVAS-PAINT-002**: When a pointer sequence ends with no movement (a tap), the system shall still record it as a single-point stroke rather than discarding it.
 - [x] **CANVAS-PAINT-003**: The system shall treat the drawing as the ordered set of all strokes recorded since the drawing surface was last cleared.
 
 ## Brushes
 
-- [x] **CANVAS-PAINT-004**: The system shall delegate all rendering of a stroke's captured points to that stroke's active brush (line width, shape, point interpolation, and any other visual effect), performing no point-to-pixel rendering decisions of its own.
+- [x] **CANVAS-PAINT-004**: The system shall delegate all rendering of a stroke's captured points to that stroke's active brush (line width, shape, color, point interpolation, and any other visual effect), performing no point-to-pixel rendering decisions of its own.
 - [x] **CANVAS-PAINT-005**: The system shall only accept brush implementations that can render a stroke incrementally — extending the visible rendering as each new point is captured, without requiring the stroke's full, final point list in advance.
 - [x] **CANVAS-PAINT-006**: The system shall render every stroke using its single default brush (today's only implementation satisfying the brush interface): a fixed-width solid line connecting points as a polyline, with no curve-fitting or smoothing.
 
@@ -22,7 +22,7 @@
 - [D] **CANVAS-PAINT-009**: When the save operation is called, the system shall render the current drawing to a raster image and write it to Image Storage (see the Image Storage LLD) as a new saved-drawing entry.
 - [D] **CANVAS-PAINT-012**: If the save operation's write to Image Storage fails, then the system shall report that failure to its own caller rather than treating the drawing as saved.
 - [x] **CANVAS-PAINT-010**: When the clear operation is called, the system shall discard all recorded strokes and reset the visible drawing surface to blank.
-- [x] **CANVAS-PAINT-013**: When the clear operation is called while a stroke is still in progress (the pointer hasn't lifted), the system shall finalize that stroke's points-so-far as a completed stroke, discard it along with everything else, and immediately begin a new stroke continuing from the same pointer location and carrying forward the interrupted stroke's own color and brush, without querying Active Stroke Settings again. (A subsequent call to the isEmpty check reports false, since that replacement stroke already has one point — see CANVAS-PAINT-002.)
+- [x] **CANVAS-PAINT-013**: When the clear operation is called while a stroke is still in progress (the pointer hasn't lifted), the system shall finalize that stroke's points-so-far as a completed stroke, discard it along with everything else, and immediately begin a new stroke continuing from the same pointer location and carrying forward the interrupted stroke's own brush, without querying Active Stroke Settings again. (A subsequent call to the isEmpty check reports false, since that replacement stroke already has one point — see CANVAS-PAINT-002.)
 
 ## Lifecycle Survival
 
