@@ -39,7 +39,7 @@ class PaintingTest {
         settings.brush = laterBrush
         painting.onPointerMove(p1)
         painting.onPointerUp()
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
 
         assertEquals(1, originalBrush.renderCalls.size)
         assertEquals(Color.Red, originalBrush.renderCalls.single().color)
@@ -57,7 +57,7 @@ class PaintingTest {
         painting.onPointerUp()
 
         assertFalse(painting.isEmpty())
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
         assertEquals(listOf(p0), brush.renderCalls.single().points)
     }
 
@@ -73,7 +73,7 @@ class PaintingTest {
         painting.onPointerDown(p1, settings)
         painting.onPointerMove(p2)
         painting.onPointerUp()
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
 
         assertEquals(
             listOf(listOf(p0), listOf(p1, p2)),
@@ -91,7 +91,7 @@ class PaintingTest {
         painting.onPointerDown(p0, settings)
         painting.onPointerMove(p1)
         painting.onPointerUp()
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
 
         assertEquals(listOf(p0, p1), brush.renderCalls.single().points)
     }
@@ -104,9 +104,9 @@ class PaintingTest {
         val painting = Painting()
 
         painting.onPointerDown(p0, settings)
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
         painting.onPointerMove(p1)
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
 
         assertEquals(
             listOf(listOf(p0), listOf(p0, p1)),
@@ -145,7 +145,7 @@ class PaintingTest {
         painting.clear()
 
         assertTrue(painting.isEmpty())
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
         assertTrue(brush.renderCalls.isEmpty())
     }
 
@@ -168,7 +168,7 @@ class PaintingTest {
 
         painting.onPointerMove(p2)
         painting.onPointerUp()
-        testDrawScope { painting.render(this) }
+        testDrawScope { with(painting) { render() } }
 
         // Continues from the interrupted stroke's last point (p1), not p0 or a fresh start.
         assertEquals(1, brush.renderCalls.size)

@@ -42,12 +42,12 @@ class Painting {
     }
 
     // @spec CANVAS-PAINT-004, CANVAS-PAINT-007
-    fun render(drawScope: DrawScope) {
+    fun DrawScope.render() {
         for (stroke in completedStrokes) {
-            with(stroke.brush) { drawScope.render(stroke.points, stroke.color) }
+            with(stroke.brush) { render(stroke.points, stroke.color) }
         }
         liveStroke?.let { stroke ->
-            with(stroke.brush) { drawScope.render(stroke.points, stroke.color) }
+            with(stroke.brush) { render(stroke.points, stroke.color) }
         }
     }
 }
