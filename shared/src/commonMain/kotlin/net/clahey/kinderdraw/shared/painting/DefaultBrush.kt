@@ -1,6 +1,7 @@
 package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
@@ -17,15 +18,13 @@ class DefaultBrush(private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX) :
             drawCircle(color = color, radius = strokeWidthPx / 2f, center = pixelPoints.first())
             return
         }
-        for (i in 0 until pixelPoints.size - 1) {
-            drawLine(
-                color = color,
-                start = pixelPoints[i],
-                end = pixelPoints[i + 1],
-                strokeWidth = strokeWidthPx,
-                cap = StrokeCap.Round,
-            )
-        }
+        drawPoints(
+            points = pixelPoints,
+            pointMode = PointMode.Polygon,
+            color = color,
+            strokeWidth = strokeWidthPx,
+            cap = StrokeCap.Round,
+        )
     }
 
     companion object {
