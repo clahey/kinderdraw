@@ -1,1 +1,10 @@
 .claude/settings.local.json
+
+# Gradle / Android / Kotlin
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
