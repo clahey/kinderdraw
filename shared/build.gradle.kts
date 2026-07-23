@@ -14,11 +14,25 @@ kotlin {
         }
     }
 
+    jvm()
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+        jvmTest.dependencies {
+            // Constructing a real DrawScope in jvmTest (to assert on rendered
+            // pixels) needs Skiko's native library on the runtime classpath;
+            // it isn't pulled in by the Compose Multiplatform Gradle plugin
+            // for a plain jvm() target the way it is for a packaged desktop
+            // app. Version must track whatever skiko-awt Compose Multiplatform
+            // 1.11.1 resolves.
+            runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.144.6")
         }
     }
 }
