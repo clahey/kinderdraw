@@ -1,16 +1,12 @@
 package net.clahey.kinderdraw.shared.painting
 
-import androidx.compose.ui.graphics.drawscope.DrawScope
-
 /**
- * A pluggable rendering strategy for a stroke's captured points — see the
- * Painting LLD's Brushes section. Called with the stroke's full point list
- * so far, every time that list grows, rather than being told only the
- * newest point: a brush that needs prior points to interpolate (e.g. a
- * future smoothing brush) can do so without keeping its own state across
- * calls. Color is a property of the brush instance itself, fixed at its
- * own construction, not a per-render input.
+ * A pluggable rendering strategy for strokes — see the Painting LLD's
+ * Brushes section. Owns creating [Stroke] instances, so it's free to pair
+ * itself with whatever internal stroke representation its own rendering
+ * needs (e.g. a brush with per-point color, not just a flat point list);
+ * [AbstractSimpleBrush] covers the common flat-point-list case.
  */
 interface Brush {
-    fun DrawScope.render(points: List<Point>)
+    fun startStroke(point: Point): Stroke
 }

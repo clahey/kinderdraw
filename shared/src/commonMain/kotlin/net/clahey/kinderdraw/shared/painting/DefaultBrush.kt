@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 class DefaultBrush(
     private val color: Color,
     private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX,
-) : Brush {
+) : AbstractSimpleBrush() {
     // @spec CANVAS-PAINT-005, CANVAS-PAINT-006
     override fun DrawScope.render(points: List<Point>) {
         val pixelPoints = points.map { it.toOffset(size) }

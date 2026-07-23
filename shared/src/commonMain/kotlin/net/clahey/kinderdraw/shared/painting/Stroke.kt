@@ -1,16 +1,23 @@
 package net.clahey.kinderdraw.shared.painting
 
+import androidx.compose.ui.graphics.drawscope.DrawScope
+
 /**
  * One live pointer's down-to-up sequence — see the Painting LLD's Stroke
- * Model. The brush (including whatever color it renders with) is fixed at
- * construction and never changes; points accumulate as the pointer moves.
+ * Model. Created by a [Brush] (see [Brush.startStroke]), which fixes
+ * whatever settings (color included) the stroke renders with; a concrete
+ * implementation owns its own internal representation of the points
+ * captured so far.
  */
-class Stroke(val brush: Brush) {
-    private val mutablePoints = mutableListOf<Point>()
+interface Stroke {
+    fun addPoint(point: Point)
 
-    val points: List<Point> get() = mutablePoints
+    fun DrawScope.render()
 
-    fun addPoint(point: Point) {
-        mutablePoints.add(point)
-    }
+    /**
+     * Produces the stroke that continues from this one's current end
+     * point with the same settings — see the Painting LLD's mid-stroke
+     * `clear()` behavior (CANVAS-PAINT-013).
+     */
+    fun restart(): Stroke
 }

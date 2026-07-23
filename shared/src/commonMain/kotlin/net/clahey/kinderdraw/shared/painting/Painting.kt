@@ -13,7 +13,7 @@ class Painting {
 
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
     fun onPointerDown(point: Point, activeStrokeSettings: ActiveStrokeSettings) {
-        liveStroke = Stroke(activeStrokeSettings.getResolvedBrush()).apply { addPoint(point) }
+        liveStroke = activeStrokeSettings.getResolvedBrush().startStroke(point)
     }
 
     fun onPointerMove(point: Point) {
@@ -33,18 +33,14 @@ class Painting {
     fun clear() {
         val interrupted = liveStroke
         completedStrokes.clear()
-        liveStroke = interrupted?.let { stroke ->
-            Stroke(stroke.brush).apply { addPoint(stroke.points.last()) }
-        }
+        liveStroke = interrupted?.restart()
     }
 
     // @spec CANVAS-PAINT-004, CANVAS-PAINT-007
     fun DrawScope.render() {
         for (stroke in completedStrokes) {
-            with(stroke.brush) { render(stroke.points) }
+            with(stroke) { render() }
         }
-        liveStroke?.let { stroke ->
-            with(stroke.brush) { render(stroke.points) }
-        }
+        liveStroke?.let { stroke -> with(stroke) { render() } }
     }
 }
