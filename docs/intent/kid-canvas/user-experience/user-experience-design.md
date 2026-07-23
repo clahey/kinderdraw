@@ -55,7 +55,7 @@ The current, in-progress drawing must survive any lifecycle event the OS handles
 
 Actions that User Experience orchestrates across components answer the toddler through the action's own visible effect, not through any separate dialog, confirmation, or extra interaction step:
 
-- **Color selection** — Widgets owns the visual mechanism (e.g. which swatch shows as active); User Experience wires the selection straight into Painting's active stroke color, so the next stroke drawn is simply in the new color — no separate acknowledgment step required.
+- **Color selection** — Widgets owns the visual mechanism (e.g. which swatch shows as active); User Experience owns Active Stroke Settings, the resolved color/brush source Painting reads from (see the Painting LLD), and writes the toddler's swatch selection into it — so the next stroke Painting starts is simply in the new color, with no separate acknowledgment step required. Brush has no selection input yet — Active Stroke Settings' brush accessor always resolves to Painting's single default (see the Painting LLD's Brushes).
 - **New Picture** — the cleared canvas is itself the feedback: the toddler sees the drawing surface go blank, confirming the action took effect. No separate confirmation banner or toast is shown, consistent with no blocking dialogs on the kid canvas.
 
 Feedback belonging to a single control's own activation (a button's press animation, for example) is owned by Widgets, not here — this section covers only feedback for actions User Experience itself orchestrates across components.
@@ -71,6 +71,7 @@ Feedback belonging to a single control's own activation (a button's press animat
 | Auto-save on New Picture when the drawing is empty | Skipped — no save write, canvas still clears | Always auto-save regardless of content | Avoids cluttering the saved-drawings store with blank entries. Ownership stays split: Painting reports whether there's content, User Experience decides what that fact means. |
 | OS back gesture | Consumed and ignored, at least under younger-age configurations | Standard OS back behavior (exits the app); mapping the gesture to an in-app action (e.g. New Picture) | A toddler navigating out of the app unsupervised is the failure mode the HLD's first-launch device-locking exists to prevent; ignoring back is a baseline defense independent of whether locking is active. Exact age cutoff, if any, is deferred. |
 | Surviving OS-managed lifecycle events (rotation, brief backgrounding, saved-instance-state-scoped process death) | Current drawing persists via the platform's saved-instance-state mechanism, separate from the New Picture auto-save path | Rely on the New Picture auto-save path for this too; accept loss of in-progress work across these events | Routine OS churn isn't a completed drawing worth writing to the permanent store — it's ordinary transient UI state, no different from any other Compose screen's saved-instance-state handling — and shouldn't force a save-then-clear the toddler never asked for. |
+| Ownership of Active Stroke Settings (Painting's resolved color/brush source) | User Experience implements and owns it, writing the toddler's swatch selection into it (brush has no selection input yet, so it always resolves to Painting's single default) | Painting owns active color/brush directly as its own mutable state, written via a setter call from User Experience | Matches the Painting LLD's decision to keep Painting's stroke rendering ignorant of how a color/brush value gets decided. User Experience already owns Widgets' color-selection wiring, so it's the natural place to decide — and later evolve — what the resolved value is. |
 
 ## Open Questions & Future Decisions
 
@@ -83,6 +84,7 @@ Feedback belonging to a single control's own activation (a button's press animat
 1. What happens if the auto-save on New Picture fails (storage full, write error)? Image Storage reports the failure to the caller, but what User Experience does in response is undefined — today's design assumes the save always succeeds before the canvas clears.
 2. Per-feature gating granularity: once the feature set grows past the current single bundle, which features become independently toggle-able needs its own pass — including whether/at what age OS back navigation is ever re-enabled.
 3. Exact composition geometry — which edge each Widgets control anchors to, spacing, sizing — is deferred to implementation and visual design, not fixed here.
+4. Whether a resolved color/brush value can ever change automatically between strokes, without a new toddler tap, isn't decided — Active Stroke Settings' interface shape allows for it, but no such behavior exists today.
 
 ## References
 

@@ -15,15 +15,23 @@ This is the component the HLD's Compose Multiplatform sharing decision is about:
 
 ## Stroke Model
 
-A stroke is the record of one live pointer's down-to-up sequence: an ordered list of points, plus the color and brush active when the stroke began (color set by User Experience's color-selection wiring — see the User Experience LLD's Interaction Feedback; brush per Brushes below). Both are fixed for the stroke's whole duration. Changing the active color mid-stroke can't happen today anyway, since color selection is a Widgets control and Widgets can't receive input while a stroke is live (see Input Arbitration) — but even if it could, an in-progress stroke wouldn't change color or brush retroactively.
+A stroke is the record of one live pointer's down-to-up sequence: an ordered list of points, plus the color and brush active when the stroke began (read from Active Stroke Settings below). Both are fixed for the stroke's whole duration. Changing the active color mid-stroke can't happen today anyway, since color selection is a Widgets control and Widgets can't receive input while a stroke is live (see Input Arbitration) — but even if it could, an in-progress stroke wouldn't change color or brush retroactively.
 
 A stroke with only a single point — a tap with no movement — is still a stroke, not discarded: its brush renders it as a small mark, so any touch on the canvas leaves a visible trace.
 
 The drawing is the ordered set of all strokes recorded since the canvas was last cleared.
 
+## Active Stroke Settings
+
+Painting doesn't own or compute its active color or brush — it reads both from Active Stroke Settings, a resolved-value interface it queries once at the moment a stroke begins: `get_resolved_color()`/`get_resolved_brush()`-shaped accessors, mirroring the separation the Config LLD's Resolved Features draws between raw state and the value a consumer actually needs. Painting depends only on that interface, not on how a resolved value is produced. Whether it reflects a toddler's last swatch tap, or, per a future product decision, something that changes on its own between strokes without any tap at all, is entirely Active Stroke Settings' concern — implemented and owned outside Painting, not decided here.
+
+Painting queries both accessors exactly once per stroke, at the down event that begins it, and holds the returned values fixed for that stroke's whole duration regardless of any later change at the source — the same fixed-for-duration guarantee as today, now stated as a property of when Painting reads the interface rather than of when the interface's own value happens to change.
+
 ## Brushes
 
 A brush owns everything about how a stroke's captured points become rendered pixels: line width, shape, interpolation between points, and any other visual effect. Painting itself only captures point sequences and delegates their rendering to the stroke's brush — it holds no rendering logic of its own. A brush must be able to render incrementally, extending the visible stroke as each new point arrives, since Painting always renders progressively (see Rendering).
+
+Brush is a plain Kotlin interface internal to Painting — a pluggable rendering strategy, not a cross-platform data-layer boundary like Config or Image Storage's shared interfaces, since Painting itself is shared code with no per-platform variation. The interface exists and is enforced as a real contract from the start, independent of how many implementations currently satisfy it.
 
 Exactly one brush exists today — a fixed-width solid line connecting points as a simple polyline, with no curve-fitting or smoothing — and nothing outside Painting can select a different one: there's no brush-picker control in Widgets, and no brush field in the shared UX configuration. Every stroke uses this single default. The brush concept exists in Painting's own architecture specifically so a second brush can be added later as a new implementation, without restructuring how strokes are captured or rendered; exposing brush choice as a product feature (a control, an age-gated bundle, or otherwise) is a separate, later decision — see Open Questions.
 
@@ -52,6 +60,7 @@ The current, uncleared drawing must also survive the OS-managed lifecycle events
 | Brush as a first-class, pluggable concept, with a single implementation and no selection UI | Painting's architecture defines a brush abstraction now; exactly one brush (fixed-width solid polyline, no smoothing) is implemented, and nothing exposes a way to choose between brushes | Hardcode the single line-rendering algorithm directly into Painting with no abstraction; build out a brush-selection UI now alongside the abstraction | Keeps adding a second brush later to a matter of a new implementation rather than restructuring Painting, without committing to any product surface (control, config field) before there's a real need for one. |
 | Who writes a saved drawing to Image Storage | Painting itself, on a `save()` call from User Experience | User Experience writes to Image Storage directly, using drawing data pulled from Painting | Matches the Kid Canvas sub-HLD's system diagram, where Painting owns the "writes drawings" edge to the store, and keeps Image Storage access confined to the component that already owns the drawing data. |
 | Saved-drawing format | A rendered raster image | Vector/stroke data | The HLD's Non-Goals exclude re-editing or undo history, so nothing ever needs to reconstruct strokes from a saved drawing — only display and delete it (see the Image Storage LLD). |
+| Source of a stroke's active color and brush | Painting queries Active Stroke Settings' resolved accessors (`get_resolved_color()`/`get_resolved_brush()`-shaped) once at each stroke's start | Painting holds active color/brush as its own mutable state, set via a setter call from User Experience | Keeps whatever decides the value — today's manual swatch selection, or any future automatic behavior — entirely outside Painting, mirroring Config's raw/resolved separation. Painting only ever needs the momentary resolved value, not how it was derived. |
 
 ## Open Questions & Future Decisions
 
@@ -62,10 +71,11 @@ The current, uncleared drawing must also survive the OS-managed lifecycle events
 3. Whether the default brush needs path smoothing is deferred until its unsmoothed polyline is actually seen in practice.
 4. Whether and how brush choice ever becomes user-facing — a Widgets control, an age-gated bundle entry, or otherwise — is not decided; today it's purely an internal architectural seam with a single implementation behind it.
 5. How the shared Compose Multiplatform canvas embeds inside the native GTK+ shell on Linux is an open technical question at the HLD level, inherited here without further resolution.
+6. User Experience owns and implements Active Stroke Settings (see its LLD's Interaction Feedback). Whether a resolved value can ever change on its own between strokes, without a new toddler tap, is that LLD's open question, not Painting's — Painting's read-once-per-stroke behavior already accommodates it either way.
 
 ## References
 
 - Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines Painting as converting a pointer/touch sequence into stroke data and rendering it.
 - Root HLD: `docs/high-level-design.md` — Approach (Compose Multiplatform canvas sharing), Key Design Decisions (canvas implemented once, shared across platforms).
-- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Input Arbitration (source of Painting's single pointer stream), Lifecycle Behavior (when save/clear are called), OS Navigation and Process Lifecycle (saved-instance-state survival).
+- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Input Arbitration (source of Painting's single pointer stream), Lifecycle Behavior (when save/clear are called), OS Navigation and Process Lifecycle (saved-instance-state survival), Interaction Feedback (owns Active Stroke Settings' color-selection wiring).
 - `docs/intent/image-storage/image-storage-design.md` — saved-drawing storage shape and write API.

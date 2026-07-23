@@ -1,0 +1,27 @@
+# Painting — EARS Specs
+
+## Stroke Model
+
+- [ ] **CANVAS-PAINT-001**: When a pointer goes down on the drawing surface, the system shall begin recording a stroke as an ordered list of points, querying Active Stroke Settings (Painting's resolved color/brush source, owned by User Experience) once at that moment for the stroke's color and brush, and fixing those returned values for the stroke's entire duration regardless of any later change at the source.
+- [ ] **CANVAS-PAINT-002**: When a pointer sequence ends with no movement (a tap), the system shall still record it as a single-point stroke rather than discarding it.
+- [ ] **CANVAS-PAINT-003**: The system shall treat the drawing as the ordered set of all strokes recorded since the drawing surface was last cleared.
+
+## Brushes
+
+- [ ] **CANVAS-PAINT-004**: The system shall delegate all rendering of a stroke's captured points to that stroke's active brush (line width, shape, point interpolation, and any other visual effect), performing no point-to-pixel rendering decisions of its own.
+- [ ] **CANVAS-PAINT-005**: The system shall only accept brush implementations that can render a stroke incrementally — extending the visible rendering as each new point is captured, without requiring the stroke's full, final point list in advance.
+- [ ] **CANVAS-PAINT-006**: The system shall render every stroke using its single default brush (today's only implementation satisfying the brush interface): a fixed-width solid line connecting points as a polyline, with no curve-fitting or smoothing.
+
+## Rendering
+
+- [ ] **CANVAS-PAINT-007**: When a new point is captured for a live stroke, the system shall extend that stroke's visible rendering immediately via the stroke's active brush, rather than waiting until the pointer lifts to render anything.
+
+## Save and Clear
+
+- [ ] **CANVAS-PAINT-008**: The system shall expose an operation that reports true only if no strokes have been recorded since the drawing surface was last cleared.
+- [ ] **CANVAS-PAINT-009**: When the save operation is called, the system shall render the current drawing to a raster image and write it to Image Storage (see the Image Storage LLD) as a new saved-drawing entry.
+- [ ] **CANVAS-PAINT-010**: When the clear operation is called, the system shall discard all recorded strokes and reset the visible drawing surface to blank.
+
+## Lifecycle Survival
+
+- [ ] **CANVAS-PAINT-011**: When the OS suspends and resumes the process within the scope of its own saved-instance-state mechanism (e.g. a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current uncleared drawing's recorded strokes and restore the same visible drawing surface, without invoking the save operation.
