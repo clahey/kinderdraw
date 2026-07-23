@@ -16,15 +16,15 @@ class DefaultBrush(private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX) :
         val pixelPoints = points.map { it.toOffset(size) }
         if (pixelPoints.size == 1) {
             drawCircle(color = color, radius = strokeWidthPx / 2f, center = pixelPoints.first())
-            return
+        } else {
+            drawPoints(
+                points = pixelPoints,
+                pointMode = PointMode.Polygon,
+                color = color,
+                strokeWidth = strokeWidthPx,
+                cap = StrokeCap.Round,
+            )
         }
-        drawPoints(
-            points = pixelPoints,
-            pointMode = PointMode.Polygon,
-            color = color,
-            strokeWidth = strokeWidthPx,
-            cap = StrokeCap.Round,
-        )
     }
 
     companion object {
