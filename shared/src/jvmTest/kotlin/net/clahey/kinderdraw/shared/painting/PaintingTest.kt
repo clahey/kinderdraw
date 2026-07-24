@@ -1,5 +1,7 @@
 package net.clahey.kinderdraw.shared.painting
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,9 +19,9 @@ class PaintingTest {
     fun pointerDownQueriesActiveStrokeSettingsExactlyOnce() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerMove(p1)
         painting.onPointerUp()
 
@@ -32,9 +34,9 @@ class PaintingTest {
         val originalBrush = FakeBrush()
         val laterBrush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = originalBrush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         settings.brush = laterBrush
         painting.onPointerMove(p1)
         painting.onPointerUp()
@@ -49,9 +51,9 @@ class PaintingTest {
     fun tapWithNoMovementIsRecordedAsASinglePointStroke() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
 
         assertFalse(painting.isEmpty())
@@ -64,11 +66,11 @@ class PaintingTest {
     fun drawingIsTheOrderedSetOfStrokesRecordedSinceLastClear() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
-        painting.onPointerDown(p1, settings)
+        painting.onPointerDown(p1)
         painting.onPointerMove(p2)
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
@@ -81,9 +83,9 @@ class PaintingTest {
     fun paintingPassesCapturedPointsToTheBrushUnconverted() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerMove(p1)
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
@@ -96,9 +98,9 @@ class PaintingTest {
     fun newlyCapturedPointsExtendTheLiveStrokesRenderingImmediately() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         testDrawScope { with(painting) { render() } }
         painting.onPointerMove(p1)
         testDrawScope { with(painting) { render() } }
@@ -110,11 +112,11 @@ class PaintingTest {
     @Test
     fun isEmptyReportsTrueOnlyWhenNoStrokesRecordedSinceLastClear() {
         val settings = FakeActiveStrokeSettings()
-        val painting = Painting()
+        val painting = Painting(settings)
 
         assertTrue(painting.isEmpty())
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
         assertFalse(painting.isEmpty())
 
@@ -127,11 +129,11 @@ class PaintingTest {
     fun clearDiscardsAllStrokesAndResetsToBlank() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
-        painting.onPointerDown(p1, settings)
+        painting.onPointerDown(p1)
         painting.onPointerUp()
 
         painting.clear()
@@ -141,15 +143,56 @@ class PaintingTest {
         assertTrue(brush.renderCalls.isEmpty())
     }
 
+    // @spec CANVAS-PAINT-016
+    @Test
+    fun renderFillsTheDrawingSurfaceWithTheResolvedBackgroundBeforeStrokes() {
+        val settings = FakeActiveStrokeSettings(background = Color.Red)
+        val painting = Painting(settings)
+
+        val image = testDrawScope(width = 4, height = 4) { with(painting) { render() } }
+
+        assertEquals(Color.Red, image.toPixelMap()[0, 0])
+    }
+
+    // @spec CANVAS-PAINT-016
+    @Test
+    fun backgroundIsResolvedAtConstructionAndReusedUntilClear() {
+        val settings = FakeActiveStrokeSettings(background = Color.Red)
+        val painting = Painting(settings)
+
+        assertEquals(1, settings.backgroundQueryCount)
+
+        settings.background = Color.Blue
+        val beforeClear = testDrawScope(width = 4, height = 4) { with(painting) { render() } }
+
+        // Still red — a render() call alone doesn't re-query.
+        assertEquals(Color.Red, beforeClear.toPixelMap()[0, 0])
+        assertEquals(1, settings.backgroundQueryCount)
+    }
+
+    // @spec CANVAS-PAINT-010, CANVAS-PAINT-016
+    @Test
+    fun clearReResolvesTheBackground() {
+        val settings = FakeActiveStrokeSettings(background = Color.Red)
+        val painting = Painting(settings)
+        settings.background = Color.Blue
+
+        painting.clear()
+
+        assertEquals(2, settings.backgroundQueryCount)
+        val image = testDrawScope(width = 4, height = 4) { with(painting) { render() } }
+        assertEquals(Color.Blue, image.toPixelMap()[0, 0])
+    }
+
     // @spec CANVAS-PAINT-009
     @Test
     fun saveRasterizesTheDrawingAtItsLastRenderedSizeAndWritesItToImageStorage() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
         testDrawScope(width = 40, height = 24) { with(painting) { render() } }
 
@@ -165,10 +208,10 @@ class PaintingTest {
     @Test
     fun saveBeforeAnyRenderCallDoesNotCrash() = runBlocking {
         val settings = FakeActiveStrokeSettings(brush = FakeBrush())
-        val painting = Painting()
+        val painting = Painting(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
         // No render() call before save() — the drawing surface's size is unknown.
 
@@ -182,10 +225,10 @@ class PaintingTest {
     fun saveRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerMove(p1)
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
@@ -198,16 +241,35 @@ class PaintingTest {
         assertEquals(listOf(p0, p1), brush.renderCalls.last())
     }
 
+    // @spec CANVAS-PAINT-016
+    @Test
+    fun saveIncludesTheResolvedBackgroundMatchingOnScreenRendering() = runBlocking {
+        val settings = FakeActiveStrokeSettings(background = Color.Red)
+        val painting = Painting(settings)
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0)
+        painting.onPointerUp()
+        testDrawScope(width = 4, height = 4) { with(painting) { render() } }
+
+        painting.save(imageStorage)
+
+        // Reuses the same render() path as on-screen, so the saved image's
+        // background matches by construction, not by keeping two paths in sync.
+        val savedImage = imageStorage.createCalls.single()
+        assertEquals(Color.Red, savedImage.toPixelMap()[0, 0])
+    }
+
     // @spec CANVAS-PAINT-012
     @Test
     fun saveReportsImageStorageFailureToItsOwnCallerRatherThanTreatingTheDrawingAsSaved() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
         val imageStorage = FakeImageStorage()
         imageStorage.failNextCreate("disk full")
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerUp()
         testDrawScope { with(painting) { render() } }
 
@@ -222,9 +284,9 @@ class PaintingTest {
     fun clearWhileAStrokeIsLiveFinalizesItAndReplacesItInheritingSettings() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting()
+        val painting = Painting(settings)
 
-        painting.onPointerDown(p0, settings)
+        painting.onPointerDown(p0)
         painting.onPointerMove(p1)
         painting.clear()
 

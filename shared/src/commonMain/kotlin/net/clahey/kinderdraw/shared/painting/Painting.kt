@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -14,13 +15,16 @@ import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
  * Painting LLD. Receives one pointer's down/move/up sequence at a time;
  * arbitrating which pointer reaches Painting is User Experience's job.
  */
-class Painting {
+class Painting(private val activeStrokeSettings: ActiveStrokeSettings) {
     private val completedStrokes = mutableListOf<Stroke>()
     private var liveStroke: Stroke? = null
     private var lastRenderSize: Size = Size.Zero
 
+    // @spec CANVAS-PAINT-016
+    private var background: Color = activeStrokeSettings.getResolvedBackground()
+
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
-    fun onPointerDown(point: Point, activeStrokeSettings: ActiveStrokeSettings) {
+    fun onPointerDown(point: Point) {
         liveStroke = activeStrokeSettings.getResolvedBrush().startStroke(point)
     }
 
@@ -41,16 +45,18 @@ class Painting {
     suspend fun save(imageStorage: ImageStorage): Result<Unit> =
         imageStorage.create(rasterize()).map { }
 
-    // @spec CANVAS-PAINT-010, CANVAS-PAINT-013
+    // @spec CANVAS-PAINT-010, CANVAS-PAINT-013, CANVAS-PAINT-016
     fun clear() {
         val interrupted = liveStroke
         completedStrokes.clear()
         liveStroke = interrupted?.restart()
+        background = activeStrokeSettings.getResolvedBackground()
     }
 
-    // @spec CANVAS-PAINT-004, CANVAS-PAINT-007
+    // @spec CANVAS-PAINT-004, CANVAS-PAINT-007, CANVAS-PAINT-016
     fun DrawScope.render() {
         lastRenderSize = size
+        drawRect(color = background, size = size)
         for (stroke in completedStrokes) {
             with(stroke) { render() }
         }

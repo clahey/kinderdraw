@@ -15,6 +15,7 @@
 ## Rendering
 
 - [x] **CANVAS-PAINT-007**: When a new point is captured for a live stroke, the system shall extend that stroke's visible rendering immediately via the stroke's active brush, rather than waiting until the pointer lifts to render anything.
+- [x] **CANVAS-PAINT-016**: The system shall query Active Stroke Settings' resolved background color when Painting is constructed and again each time the clear operation is called, and shall fill the entire rendered area with that color before drawing any strokes — both when rendering to the visible drawing surface and when rasterizing for the save operation.
 
 ## Save and Clear
 
