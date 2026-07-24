@@ -260,6 +260,60 @@ class PaintingTest {
         assertEquals(Color.Red, savedImage.toPixelMap()[0, 0])
     }
 
+    // @spec CANVAS-PAINT-009
+    @Test
+    fun saveWithoutAnIdCreatesANewEntryAndReturnsItsId() = runBlocking {
+        val settings = FakeActiveStrokeSettings()
+        val painting = Painting(settings)
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0)
+        painting.onPointerUp()
+        testDrawScope { with(painting) { render() } }
+
+        val result = painting.save(imageStorage)
+
+        assertEquals(Result.success("id"), result)
+        assertEquals(1, imageStorage.createCalls.size)
+        assertTrue(imageStorage.updateCalls.isEmpty())
+    }
+
+    // @spec CANVAS-PAINT-017
+    @Test
+    fun saveWithAnIdUpdatesTheExistingEntryAndReturnsTheSameId() = runBlocking {
+        val settings = FakeActiveStrokeSettings()
+        val painting = Painting(settings)
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0)
+        painting.onPointerUp()
+        testDrawScope { with(painting) { render() } }
+
+        val result = painting.save(imageStorage, id = "existing-id")
+
+        assertEquals(Result.success("existing-id"), result)
+        assertEquals("existing-id", imageStorage.updateCalls.single().first)
+        assertTrue(imageStorage.createCalls.isEmpty())
+    }
+
+    // @spec CANVAS-PAINT-012, CANVAS-PAINT-017
+    @Test
+    fun saveWithAnIdReportsImageStorageFailureToItsOwnCaller() = runBlocking {
+        val settings = FakeActiveStrokeSettings()
+        val painting = Painting(settings)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextUpdate("no such entry")
+
+        painting.onPointerDown(p0)
+        painting.onPointerUp()
+        testDrawScope { with(painting) { render() } }
+
+        val result = painting.save(imageStorage, id = "missing-id")
+
+        assertTrue(result.isFailure)
+        assertEquals("no such entry", result.exceptionOrNull()?.message)
+    }
+
     // @spec CANVAS-PAINT-012
     @Test
     fun saveReportsImageStorageFailureToItsOwnCallerRatherThanTreatingTheDrawingAsSaved() = runBlocking {

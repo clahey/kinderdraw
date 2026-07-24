@@ -41,9 +41,16 @@ class Painting(private val activeStrokeSettings: ActiveStrokeSettings) {
     // @spec CANVAS-PAINT-008
     fun isEmpty(): Boolean = completedStrokes.isEmpty() && liveStroke == null
 
-    // @spec CANVAS-PAINT-009, CANVAS-PAINT-012
-    suspend fun save(imageStorage: ImageStorage): Result<Unit> =
-        imageStorage.create(rasterize()).map { }
+    // @spec CANVAS-PAINT-009, CANVAS-PAINT-012, CANVAS-PAINT-017
+    suspend fun save(imageStorage: ImageStorage, id: String? = null): Result<String> {
+        val image = rasterize()
+        val result = if (id == null) {
+            imageStorage.create(image)
+        } else {
+            imageStorage.update(id, image)
+        }
+        return result.map { it.id }
+    }
 
     // @spec CANVAS-PAINT-010, CANVAS-PAINT-013, CANVAS-PAINT-016
     fun clear() {
