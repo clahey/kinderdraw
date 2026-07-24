@@ -155,11 +155,13 @@ class MediaStoreImageStorageTest {
     // @spec IMAGES-009
     @Test
     fun anEntryCreatedByOneInstanceIsReadableByALaterInstance() = runBlocking {
-        val entry = storage.create(ImageBitmap(4, 4)).getOrThrow()
+        val original = twoColorImage(4, Color.Red, Color.Blue)
+        val entry = storage.create(original).getOrThrow()
 
         val laterInstance = MediaStoreImageStorage(context)
+        val readImage = laterInstance.read(entry.id).getOrThrow()
 
-        assertTrue(laterInstance.read(entry.id).isSuccess)
+        assertTrue(original.asAndroidBitmap().sameAs(readImage.asAndroidBitmap()))
     }
 
     /** A two-tone image (left half [left], right half [right]) — a single solid color
