@@ -3,7 +3,14 @@ package net.clahey.kinderdraw.shared.imagestorage
 import android.content.Context
 import android.os.Looper
 import android.provider.MediaStore
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,11 +46,11 @@ class MediaStoreImageStorageTest {
     // @spec IMAGES-006
     @Test
     fun readReturnsTheImagePassedToCreate() = runBlocking {
-        val entry = storage.create(ImageBitmap(4, 4)).getOrThrow()
+        val entry = storage.create(solidColorImage(4, Color.Red)).getOrThrow()
 
-        val readResult = storage.read(entry.id)
+        val readImage = storage.read(entry.id).getOrThrow()
 
-        assertTrue(readResult.isSuccess)
+        assertEquals(Color.Red, readImage.toPixelMap()[0, 0])
     }
 
     // @spec IMAGES-017
@@ -57,11 +64,12 @@ class MediaStoreImageStorageTest {
     // @spec IMAGES-003
     @Test
     fun updateReplacesAnExistingEntrysImage() = runBlocking {
-        val entry = storage.create(ImageBitmap(4, 4)).getOrThrow()
+        val entry = storage.create(solidColorImage(4, Color.Red)).getOrThrow()
 
-        val updateResult = storage.update(entry.id, ImageBitmap(8, 8))
+        storage.update(entry.id, solidColorImage(4, Color.Blue)).getOrThrow()
 
-        assertTrue(updateResult.isSuccess)
+        val readImage = storage.read(entry.id).getOrThrow()
+        assertEquals(Color.Blue, readImage.toPixelMap()[0, 0])
     }
 
     // @spec IMAGES-004, IMAGES-011
@@ -149,5 +157,18 @@ class MediaStoreImageStorageTest {
         val laterInstance = MediaStoreImageStorage(context)
 
         assertTrue(laterInstance.read(entry.id).isSuccess)
+    }
+
+    private fun solidColorImage(size: Int, color: Color): ImageBitmap {
+        val image = ImageBitmap(size, size)
+        CanvasDrawScope().draw(
+            Density(1f),
+            LayoutDirection.Ltr,
+            Canvas(image),
+            Size(size.toFloat(), size.toFloat()),
+        ) {
+            drawRect(color = color)
+        }
+        return image
     }
 }
