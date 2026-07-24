@@ -20,7 +20,7 @@ abstract class AbstractSimpleBrush : Brush {
         }
 
         override fun DrawScope.render() {
-            with(brush) { render(mutablePoints) }
+            with(brush) { render(mutablePoints.toList()) }
         }
 
         override fun restart(): Stroke = brush.startStroke(mutablePoints.last())
