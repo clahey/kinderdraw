@@ -28,4 +28,19 @@ class PointTest {
         assertEquals(0.5f, beforeResize.x / 100f)
         assertEquals(0.5f, afterResize.x / 200f)
     }
+
+    @Test
+    fun offsetConvertsToAPointFractionalWithinTheGivenSize() {
+        val offset = Offset(25f, 75f)
+
+        assertEquals(Point(xFraction = 0.25f, yFraction = 0.75f), offset.toPoint(Size(100f, 100f)))
+    }
+
+    @Test
+    fun offsetToPointAndBackRoundTrips() {
+        val point = Point(xFraction = 0.3f, yFraction = 0.6f)
+        val size = Size(320f, 480f)
+
+        assertEquals(point, point.toOffset(size).toPoint(size))
+    }
 }
