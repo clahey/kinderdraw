@@ -40,19 +40,17 @@ class MediaStoreImageStorage(private val context: Context) : ImageStorage {
         awaitClose { context.contentResolver.unregisterContentObserver(observer) }
     }
 
-    private fun queryEntries(): List<SavedDrawingEntry> {
+    private fun queryEntries(): List<SavedDrawingEntry> = buildList {
         val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATE_TAKEN)
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
         val selectionArgs = arrayOf(albumRelativePath)
-        val result = mutableListOf<SavedDrawingEntry>()
         context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
             val idIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
             val dateIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
             while (cursor.moveToNext()) {
-                result.add(SavedDrawingEntry(cursor.getLong(idIndex).toString(), cursor.getLong(dateIndex)))
+                add(SavedDrawingEntry(cursor.getLong(idIndex).toString(), cursor.getLong(dateIndex)))
             }
         }
-        return result
     }
 
     override suspend fun create(image: ImageBitmap, timestamp: Long?): Result<SavedDrawingEntry> =
