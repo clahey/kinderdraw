@@ -163,6 +163,22 @@ class PaintingTest {
 
     // @spec CANVAS-PAINT-009
     @Test
+    fun saveBeforeAnyRenderCallDoesNotCrash() = runBlocking {
+        val settings = FakeActiveStrokeSettings(brush = FakeBrush())
+        val painting = Painting()
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0, settings)
+        painting.onPointerUp()
+        // No render() call before save() — the drawing surface's size is unknown.
+
+        val result = painting.save(imageStorage)
+
+        assertTrue(result.isSuccess)
+    }
+
+    // @spec CANVAS-PAINT-009
+    @Test
     fun saveRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)

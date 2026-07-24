@@ -59,8 +59,8 @@ class Painting {
 
     /** Rasterizes the drawing off-screen, at the size last seen in [render] — see the Painting LLD's Save and Clear. */
     private fun rasterize(): ImageBitmap {
-        val width = lastRenderSize.width.toInt()
-        val height = lastRenderSize.height.toInt()
+        val width = lastRenderSize.width.toInt().coerceAtLeast(1)
+        val height = lastRenderSize.height.toInt().coerceAtLeast(1)
         val image = ImageBitmap(width, height)
         CanvasDrawScope().draw(
             Density(1f),
