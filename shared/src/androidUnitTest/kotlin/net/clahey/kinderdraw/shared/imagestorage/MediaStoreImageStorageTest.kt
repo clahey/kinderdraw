@@ -3,12 +3,13 @@ package net.clahey.kinderdraw.shared.imagestorage
 import android.content.Context
 import android.os.Looper
 import android.provider.MediaStore
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
@@ -46,11 +47,12 @@ class MediaStoreImageStorageTest {
     // @spec IMAGES-006
     @Test
     fun readReturnsTheImagePassedToCreate() = runBlocking {
-        val entry = storage.create(solidColorImage(4, Color.Red)).getOrThrow()
+        val original = twoColorImage(4, Color.Red, Color.Blue)
+        val entry = storage.create(original).getOrThrow()
 
         val readImage = storage.read(entry.id).getOrThrow()
 
-        assertEquals(Color.Red, readImage.toPixelMap()[0, 0])
+        assertTrue(original.asAndroidBitmap().sameAs(readImage.asAndroidBitmap()))
     }
 
     // @spec IMAGES-017
@@ -64,12 +66,13 @@ class MediaStoreImageStorageTest {
     // @spec IMAGES-003
     @Test
     fun updateReplacesAnExistingEntrysImage() = runBlocking {
-        val entry = storage.create(solidColorImage(4, Color.Red)).getOrThrow()
+        val entry = storage.create(twoColorImage(4, Color.Red, Color.Blue)).getOrThrow()
+        val replacement = twoColorImage(4, Color.Blue, Color.Red)
 
-        storage.update(entry.id, solidColorImage(4, Color.Blue)).getOrThrow()
+        storage.update(entry.id, replacement).getOrThrow()
 
         val readImage = storage.read(entry.id).getOrThrow()
-        assertEquals(Color.Blue, readImage.toPixelMap()[0, 0])
+        assertTrue(replacement.asAndroidBitmap().sameAs(readImage.asAndroidBitmap()))
     }
 
     // @spec IMAGES-004, IMAGES-011
@@ -159,15 +162,19 @@ class MediaStoreImageStorageTest {
         assertTrue(laterInstance.read(entry.id).isSuccess)
     }
 
-    private fun solidColorImage(size: Int, color: Color): ImageBitmap {
+    /** A two-tone image (left half [left], right half [right]) — a single solid color
+     * wouldn't distinguish "the right content came back" from "some content came back". */
+    private fun twoColorImage(size: Int, left: Color, right: Color): ImageBitmap {
         val image = ImageBitmap(size, size)
+        val half = size / 2f
         CanvasDrawScope().draw(
             Density(1f),
             LayoutDirection.Ltr,
             Canvas(image),
             Size(size.toFloat(), size.toFloat()),
         ) {
-            drawRect(color = color)
+            drawRect(color = left, size = Size(half, size.toFloat()))
+            drawRect(color = right, topLeft = Offset(half, 0f), size = Size(half, size.toFloat()))
         }
         return image
     }
