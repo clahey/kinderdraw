@@ -118,7 +118,9 @@ class MediaStoreImageStorageTest {
 
         val list = storage.entries.first()
 
-        assertTrue(list.any { it.id == entry.id })
+        // Exact match, not .any — proves test isolation (no leftover entries
+        // from other tests) as a side effect of checking the real behavior.
+        assertEquals(listOf(entry), list)
     }
 
     // @spec IMAGES-015
