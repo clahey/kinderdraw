@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -34,6 +35,15 @@ kotlin {
             // 1.11.1 resolves.
             runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.144.6")
         }
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.robolectric)
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.junit)
+                implementation(libs.junit)
+            }
+        }
     }
 }
 
@@ -43,5 +53,11 @@ android {
 
     defaultConfig {
         minSdk = 30
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
