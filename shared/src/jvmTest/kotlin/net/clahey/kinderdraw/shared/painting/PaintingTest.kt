@@ -4,6 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
+import net.clahey.kinderdraw.shared.imagestorage.FakeImageStorage
 
 class PaintingTest {
     private val p0 = Point(0.1f, 0.1f)
@@ -137,6 +139,66 @@ class PaintingTest {
         assertTrue(painting.isEmpty())
         testDrawScope { with(painting) { render() } }
         assertTrue(brush.renderCalls.isEmpty())
+    }
+
+    // @spec CANVAS-PAINT-009
+    @Test
+    fun saveRasterizesTheDrawingAtItsLastRenderedSizeAndWritesItToImageStorage() = runBlocking {
+        val brush = FakeBrush()
+        val settings = FakeActiveStrokeSettings(brush = brush)
+        val painting = Painting()
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0, settings)
+        painting.onPointerUp()
+        testDrawScope(width = 40, height = 24) { with(painting) { render() } }
+
+        val result = painting.save(imageStorage)
+
+        assertTrue(result.isSuccess)
+        val image = imageStorage.createCalls.single()
+        assertEquals(40, image.width)
+        assertEquals(24, image.height)
+    }
+
+    // @spec CANVAS-PAINT-009
+    @Test
+    fun saveRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() = runBlocking {
+        val brush = FakeBrush()
+        val settings = FakeActiveStrokeSettings(brush = brush)
+        val painting = Painting()
+        val imageStorage = FakeImageStorage()
+
+        painting.onPointerDown(p0, settings)
+        painting.onPointerMove(p1)
+        painting.onPointerUp()
+        testDrawScope { with(painting) { render() } }
+
+        painting.save(imageStorage)
+
+        // The on-screen render() call above already recorded one entry;
+        // save()'s own off-screen rasterization replays the same render path.
+        assertEquals(2, brush.renderCalls.size)
+        assertEquals(listOf(p0, p1), brush.renderCalls.last())
+    }
+
+    // @spec CANVAS-PAINT-012
+    @Test
+    fun saveReportsImageStorageFailureToItsOwnCallerRatherThanTreatingTheDrawingAsSaved() = runBlocking {
+        val brush = FakeBrush()
+        val settings = FakeActiveStrokeSettings(brush = brush)
+        val painting = Painting()
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreate("disk full")
+
+        painting.onPointerDown(p0, settings)
+        painting.onPointerUp()
+        testDrawScope { with(painting) { render() } }
+
+        val result = painting.save(imageStorage)
+
+        assertTrue(result.isFailure)
+        assertEquals("disk full", result.exceptionOrNull()?.message)
     }
 
     // @spec CANVAS-PAINT-013
