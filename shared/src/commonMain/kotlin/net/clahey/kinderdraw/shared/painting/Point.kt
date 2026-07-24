@@ -12,3 +12,5 @@ data class Point(val xFraction: Float, val yFraction: Float)
 
 // @spec CANVAS-PAINT-014
 fun Point.toOffset(size: Size): Offset = Offset(xFraction * size.width, yFraction * size.height)
+
+fun Offset.toPoint(size: Size): Point = Point(xFraction = x / size.width, yFraction = y / size.height)
