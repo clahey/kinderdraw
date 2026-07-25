@@ -1,88 +1,52 @@
 package net.clahey.kinderdraw.shared.painting
 
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
-import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.toSize
 
 /**
- * Converts a pointer stream into stroke data and renders it — see the
- * Painting LLD. Receives one pointer's down/move/up sequence at a time;
- * arbitrating which pointer reaches Painting is User Experience's job.
+ * Owns pointer input for a drawing — see the Painting LLD's Composable
+ * Shape. Converts whatever pointer stream Compose delivers to it into
+ * calls against [state]; reports whether it's currently holding a live
+ * stroke via [onStrokeActiveChange], mirroring the Widgets LLD's
+ * `onPressedChange` (see the Painting LLD's Reporting Stroke State).
  */
-class Painting(private val activeStrokeSettings: ActiveStrokeSettings) {
-    private val completedStrokes = mutableListOf<Stroke>()
-    private var liveStroke: Stroke? = null
-    private var lastRenderSize: Size = Size.Zero
+@Composable
+fun Painting(
+    state: PaintingState,
+    modifier: Modifier = Modifier,
+    onStrokeActiveChange: (Boolean) -> Unit = {},
+) {
+    Canvas(
+        modifier = modifier
+            .pointerInput(state) {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    state.onPointerDown(down.position.toPoint(size.toSize()))
+                    // @spec CANVAS-PAINT-018
+                    onStrokeActiveChange(true)
 
-    // @spec CANVAS-PAINT-016
-    private var background: Color = activeStrokeSettings.getResolvedBackground()
-
-    // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
-    fun onPointerDown(point: Point) {
-        liveStroke = activeStrokeSettings.getResolvedBrush().startStroke(point)
-    }
-
-    fun onPointerMove(point: Point) {
-        liveStroke?.addPoint(point)
-    }
-
-    // @spec CANVAS-PAINT-003
-    fun onPointerUp() {
-        liveStroke?.let { completedStrokes.add(it) }
-        liveStroke = null
-    }
-
-    // @spec CANVAS-PAINT-008
-    fun isEmpty(): Boolean = completedStrokes.isEmpty() && liveStroke == null
-
-    // @spec CANVAS-PAINT-009, CANVAS-PAINT-012, CANVAS-PAINT-017
-    suspend fun save(imageStorage: ImageStorage, id: String? = null): Result<String> {
-        val image = rasterize()
-        val result = if (id == null) {
-            imageStorage.create(image)
-        } else {
-            imageStorage.update(id, image)
-        }
-        return result.map { it.id }
-    }
-
-    // @spec CANVAS-PAINT-010, CANVAS-PAINT-013, CANVAS-PAINT-016
-    fun clear() {
-        val interrupted = liveStroke
-        completedStrokes.clear()
-        liveStroke = interrupted?.restart()
-        background = activeStrokeSettings.getResolvedBackground()
-    }
-
-    // @spec CANVAS-PAINT-004, CANVAS-PAINT-007, CANVAS-PAINT-016
-    fun DrawScope.render() {
-        lastRenderSize = size
-        drawRect(color = background, size = size)
-        for (stroke in completedStrokes) {
-            with(stroke) { render() }
-        }
-        liveStroke?.let { stroke -> with(stroke) { render() } }
-    }
-
-    /** Rasterizes the drawing off-screen, at the size last seen in [render] — see the Painting LLD's Save and Clear. */
-    private fun rasterize(): ImageBitmap {
-        val width = lastRenderSize.width.toInt().coerceAtLeast(1)
-        val height = lastRenderSize.height.toInt().coerceAtLeast(1)
-        val image = ImageBitmap(width, height)
-        CanvasDrawScope().draw(
-            Density(1f),
-            LayoutDirection.Ltr,
-            Canvas(image),
-            Size(width.toFloat(), height.toFloat()),
-        ) {
-            with(this@Painting) { render() }
-        }
-        return image
+                    val pointerId = down.id
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                        change.consume()
+                        if (change.changedToUpIgnoreConsumed()) {
+                            state.onPointerUp()
+                            // @spec CANVAS-PAINT-018
+                            onStrokeActiveChange(false)
+                            break
+                        }
+                        state.onPointerMove(change.position.toPoint(size.toSize()))
+                    }
+                }
+            },
+    ) {
+        with(state) { render() }
     }
 }

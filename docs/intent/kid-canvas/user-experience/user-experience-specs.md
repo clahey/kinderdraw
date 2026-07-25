@@ -8,7 +8,7 @@
 
 - [ ] **CANVAS-UX-002**: When a pointer touches down inside some Widgets control's hit region and no gesture is currently live, the system shall let that control claim the pointer as the live gesture, reported through that control's `onPressedChange(true)` callback.
 - [ ] **CANVAS-UX-003**: When a pointer touches down outside every Widgets control's hit region and no gesture is currently live, the system shall route that pointer to Painting instead, starting a stroke — even when the touch missed a nearby control's hit region.
-- [ ] **CANVAS-UX-004**: While a gesture is live — a Widgets control between its `onPressedChange(true)` and matching `onPressedChange(false)`, or a Painting stroke between pointer-down and pointer-up — the system shall block every other pointer's down event from reaching whichever component isn't holding that gesture, so it can't claim a control or start a stroke.
+- [ ] **CANVAS-UX-004**: While a gesture is live — a Widgets control between its `onPressedChange(true)` and matching `onPressedChange(false)`, or Painting between its `onStrokeActiveChange(true)` and matching `onStrokeActiveChange(false)` — the system shall block every other pointer's down event from reaching whichever component isn't holding that gesture, so it can't claim a control or start a stroke.
 - [ ] **CANVAS-UX-005**: When the live gesture ends, the system shall accept only a subsequent pointer-down event as eligible to start the next live gesture — a pointer already held down at that moment, blocked under CANVAS-UX-004, stays blocked until it lifts and touches down again.
 
 ## Feature Gating

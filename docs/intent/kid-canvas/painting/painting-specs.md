@@ -1,5 +1,9 @@
 # Painting — EARS Specs
 
+## Composable Shape
+
+- [x] **CANVAS-PAINT-018**: When a pointer touches down on the drawing surface, the system shall report a live stroke to its caller via `onStrokeActiveChange(true)`; when that same pointer lifts, ending the stroke, the system shall report `onStrokeActiveChange(false)`.
+
 ## Stroke Model
 
 - [x] **CANVAS-PAINT-001**: When a pointer goes down on the drawing surface, the system shall begin recording a stroke as an ordered list of points, querying Active Stroke Settings (Painting's resolved brush source, owned by User Experience) once at that moment for the stroke's brush, and fixing that returned brush for the stroke's entire duration regardless of any later change at the source.

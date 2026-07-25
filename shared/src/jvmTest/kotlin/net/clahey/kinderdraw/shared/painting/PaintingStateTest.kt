@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import net.clahey.kinderdraw.shared.imagestorage.FakeImageStorage
 
-class PaintingTest {
+class PaintingStateTest {
     private val p0 = Point(0.1f, 0.1f)
     private val p1 = Point(0.2f, 0.3f)
     private val p2 = Point(0.4f, 0.5f)
@@ -19,7 +19,7 @@ class PaintingTest {
     fun pointerDownQueriesActiveStrokeSettingsExactlyOnce() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerMove(p1)
@@ -34,7 +34,7 @@ class PaintingTest {
         val originalBrush = FakeBrush()
         val laterBrush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = originalBrush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         settings.brush = laterBrush
@@ -51,7 +51,7 @@ class PaintingTest {
     fun tapWithNoMovementIsRecordedAsASinglePointStroke() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerUp()
@@ -66,7 +66,7 @@ class PaintingTest {
     fun drawingIsTheOrderedSetOfStrokesRecordedSinceLastClear() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerUp()
@@ -83,7 +83,7 @@ class PaintingTest {
     fun paintingPassesCapturedPointsToTheBrushUnconverted() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerMove(p1)
@@ -98,7 +98,7 @@ class PaintingTest {
     fun newlyCapturedPointsExtendTheLiveStrokesRenderingImmediately() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         testDrawScope { with(painting) { render() } }
@@ -112,7 +112,7 @@ class PaintingTest {
     @Test
     fun isEmptyReportsTrueOnlyWhenNoStrokesRecordedSinceLastClear() {
         val settings = FakeActiveStrokeSettings()
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         assertTrue(painting.isEmpty())
 
@@ -129,7 +129,7 @@ class PaintingTest {
     fun clearDiscardsAllStrokesAndResetsToBlank() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerUp()
@@ -147,7 +147,7 @@ class PaintingTest {
     @Test
     fun renderFillsTheDrawingSurfaceWithTheResolvedBackgroundBeforeStrokes() {
         val settings = FakeActiveStrokeSettings(background = Color.Red)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         val image = testDrawScope(width = 4, height = 4) { with(painting) { render() } }
 
@@ -158,7 +158,7 @@ class PaintingTest {
     @Test
     fun backgroundIsResolvedAtConstructionAndReusedUntilClear() {
         val settings = FakeActiveStrokeSettings(background = Color.Red)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         assertEquals(1, settings.backgroundQueryCount)
 
@@ -174,7 +174,7 @@ class PaintingTest {
     @Test
     fun clearReResolvesTheBackground() {
         val settings = FakeActiveStrokeSettings(background = Color.Red)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         settings.background = Color.Blue
 
         painting.clear()
@@ -189,7 +189,7 @@ class PaintingTest {
     fun saveRasterizesTheDrawingAtItsLastRenderedSizeAndWritesItToImageStorage() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -208,7 +208,7 @@ class PaintingTest {
     @Test
     fun saveBeforeAnyRenderCallDoesNotCrash() = runBlocking {
         val settings = FakeActiveStrokeSettings(brush = FakeBrush())
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -225,7 +225,7 @@ class PaintingTest {
     fun saveRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -245,7 +245,7 @@ class PaintingTest {
     @Test
     fun saveIncludesTheResolvedBackgroundMatchingOnScreenRendering() = runBlocking {
         val settings = FakeActiveStrokeSettings(background = Color.Red)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -264,7 +264,7 @@ class PaintingTest {
     @Test
     fun saveWithoutAnIdCreatesANewEntryAndReturnsItsId() = runBlocking {
         val settings = FakeActiveStrokeSettings()
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -282,7 +282,7 @@ class PaintingTest {
     @Test
     fun saveWithAnIdUpdatesTheExistingEntryAndReturnsTheSameId() = runBlocking {
         val settings = FakeActiveStrokeSettings()
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(p0)
@@ -300,7 +300,7 @@ class PaintingTest {
     @Test
     fun saveWithAnIdReportsImageStorageFailureToItsOwnCaller() = runBlocking {
         val settings = FakeActiveStrokeSettings()
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
         imageStorage.failNextUpdate("no such entry")
 
@@ -319,7 +319,7 @@ class PaintingTest {
     fun saveReportsImageStorageFailureToItsOwnCallerRatherThanTreatingTheDrawingAsSaved() = runBlocking {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
         imageStorage.failNextCreate("disk full")
 
@@ -338,7 +338,7 @@ class PaintingTest {
     fun clearWhileAStrokeIsLiveFinalizesItAndReplacesItInheritingSettings() {
         val brush = FakeBrush()
         val settings = FakeActiveStrokeSettings(brush = brush)
-        val painting = Painting(settings)
+        val painting = PaintingState(settings)
 
         painting.onPointerDown(p0)
         painting.onPointerMove(p1)
