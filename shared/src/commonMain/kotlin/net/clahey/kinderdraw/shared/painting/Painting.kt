@@ -26,9 +26,6 @@ fun Painting(
         modifier = modifier
             .pointerInput(state) {
                 awaitEachGesture {
-                    // requireUnconsumed defaults to true: a touch some
-                    // other component (e.g. a Widgets control) already
-                    // consumed never starts a stroke here.
                     val down = awaitFirstDown()
                     state.onPointerDown(down.position.toPoint(size.toSize()))
                     // @spec CANVAS-PAINT-018
