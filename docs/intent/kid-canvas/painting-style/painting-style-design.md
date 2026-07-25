@@ -1,0 +1,80 @@
+---
+parent: kid-canvas
+prefix: CANVAS-STYLE
+---
+
+# Painting Style
+
+## Context and Design Philosophy
+
+Painting Style defines what a stroke or the canvas background actually looks like — brush shape and color — independent of how a touch sequence becomes captured stroke data (Painting) or how the screen is orchestrated (User Experience). It's a library of pluggable rendering and color strategies with no state of its own beyond what each strategy instance is constructed with, and no dependency on either component that consumes it: Painting depends on Painting Style for its brush/stroke rendering strategy, and User Experience depends on it for the color sources behind Active Stroke Settings, but Painting Style depends on neither.
+
+Its `Brush`/`Stroke` interfaces reference `Point` (a captured coordinate, as a fraction of the drawing surface's width/height — see the Painting LLD's Stroke Model), reusing Painting's own coordinate type rather than defining a second one; this is the one place Painting Style takes a dependency on Painting, and it's a plain value type, not a behavioral one.
+
+## Brushes
+
+A brush owns a stroke's entire lifecycle, not just its final rendering: it creates each stroke that begins under it, and that stroke — not whatever holds the brush — captures the points as they arrive and turns them into rendered pixels (line width, shape, color, interpolation between points, and any other visual effect). A brush must be able to render a stroke incrementally, extending the visible output as each new point arrives, since a brush's caller (Painting) always renders progressively.
+
+A brush's color is fixed at the brush instance's own construction, not supplied separately at render time: the same instance is asked to render a stroke's points more than once as the stroke grows, and color is no more a per-render input than line width is. A color source's resolved-brush accessor is responsible for producing a brush instance already carrying the right color; today, with a single brush type, that's simply constructing the default brush with a color argument.
+
+`Brush` is a plain Kotlin interface (`fun startStroke(point: Point): Stroke`) — a pluggable rendering strategy enforced as a real contract from the start, independent of how many implementations currently satisfy it. `Stroke` is the per-instance interface a brush's `startStroke` returns: `fun addPoint(point: Point)`, `fun DrawScope.render()`, and `fun restart(): Stroke` (producing a stroke that continues from this one's current end point with the same settings, for Painting's mid-stroke `clear()` behavior).
+
+`AbstractSimpleBrush` is the base `Brush` for the common case: a stroke that's just a flat, ordered point list, rendered by a single function seeded with every point captured so far. `DefaultBrush` is today's only concrete brush: a fixed-width solid line connecting points as a simple polyline, with no curve-fitting or smoothing, constructed with whatever color a `ColorSource` resolves.
+
+`AbstractSimpleBrush`'s stroke implementation stores its points via `mutableStateListOf<Point>` rather than a plain list — this is what satisfies Painting's own requirement that a stroke's captured points participate in Compose's draw-phase snapshot observation, so `Painting` redraws as new points arrive with no invalidation signal of its own (see the Painting LLD's Composable Shape).
+
+## Color Sources
+
+`ColorSource` is a plain Kotlin interface — `fun getNextColor(): Color` — pulled from, not pushed to: a caller (an Active Stroke Settings implementation, for example) queries it whenever it needs a color, at whatever cadence that caller already operates on (Painting's own contract queries a brush's color source once per stroke; a background color source is queried at construction and at each `clear()` — see the Painting LLD's Active Stroke Settings section). `ColorSource` itself has no opinion about cadence.
+
+Two implementations exist:
+
+- **`ConstantColor(color)`** — always returns the same color.
+- **`RandomColor(hue, saturation, value)`** — composes a color from three independent `Distribution` "dials," one per HSV channel, each sampled fresh on every `getNextColor()` call. `RandomColor` holds no `Random` of its own — each `Distribution` it's given already owns one. Saturation and value are already fractions in `[0, 1]`; hue is stored as a `[0, 1]` fraction of the full color wheel and scaled to degrees when constructing the resulting color, matching how each `Distribution` is configured.
+
+Composing HSV from three independently-distributed channels, rather than one joint distribution over color space, is what lets each channel vary on its own shape — a uniform hue with a non-uniform value channel, for instance — without a combinatorial explosion of joint-distribution classes for every combination anyone might want.
+
+## Distributions
+
+`Distribution` is a plain Kotlin interface — `fun sample(): Float` — used by `RandomColor`'s three channels today, but not tied to color; anything needing a randomized (or fixed) numeric value can depend on it. Each concrete `Distribution` owns its own `kotlin.random.Random` instance, injected at construction and defaulting to `Random.Default`, rather than `sample()` taking one as a parameter — this keeps every `Distribution` self-contained, and lets a test substitute a scripted fake `Random` per instance without threading one through every caller.
+
+Three implementations exist:
+
+- **`ConstantDistribution(value)`** — always returns `value`; no randomness, no `Random` dependency.
+- **`UniformDistribution(min, max, random)`** — every value in `[min, max]` is equally likely.
+- **`LinearDistribution(min, max, weightAtMin, weightAtMax, random)`** — density increases or decreases linearly across `[min, max]`, with relative density `weightAtMin` at one end and `weightAtMax` at the other. Sampled as a mixture of two branches rather than by inverting the distribution's CDF directly: with probability `weightAtMax / (weightAtMin + weightAtMax)`, sample the increasing branch `sqrt(random.nextFloat())`; otherwise sample the decreasing branch `1 - sqrt(random.nextFloat())` — both are themselves linear (the max, respectively min, of two independent uniform samples, produced via inverse-CDF without solving anything but a square root), and a probability-weighted mixture of two linear densities is itself linear, landing exactly on the requested endpoint weights. Both branches are then scaled from `[0, 1]` into `[min, max]`. `weightAtMin` and `weightAtMax` are read only as a ratio — any two values in the same proportion produce an identical distribution — so they default to `(0, 1)`: a pure increasing ramp, and the least surprising default for a "weight" (a bare `1`, not a value that only makes sense once you know the underlying density function peaks at `2`).
+
+`weightAtMin` and `weightAtMax` must each be non-negative, and not both zero (a negative or all-zero pair has no valid mixture probability).
+
+## Decisions & Alternatives
+
+| Decision | Chosen | Alternatives Considered | Rationale |
+|----------|--------|------------------------|-----------|
+| Brush as a first-class, pluggable concept | `Brush`/`Stroke` interfaces, enforced as a real contract from the start | Hardcode the single line-rendering algorithm directly wherever strokes are rendered, with no abstraction | Keeps adding a second brush later to a matter of a new implementation rather than restructuring stroke capture/rendering, without committing to any product surface (control, config field) before there's a real need for one. |
+| Who creates and owns a stroke's lifecycle | The active brush creates each stroke that begins under it; the created stroke, not the brush's caller, captures its own points and renders itself | A caller constructs a single, brush-agnostic stroke value holding a point list and a brush reference, and calls the brush's render function directly, passing that point list in each time | Lets a brush pair itself with whatever internal stroke representation its own rendering actually needs (e.g. a future brush whose points each carry their own color) without a shared stroke type needing to know about it. |
+| Where a stroke's color lives | As a property of the brush instance itself, fixed at that instance's construction | A separate color accessor alongside the brush accessor, with color passed to the brush's render call each time | Color is exactly as fixed-for-the-brush's-lifetime as line width already is, so carrying it as a second value that has to stay matched up with a brush instance was redundant. It also naturally accommodates a brush whose own nature is multi-colored (e.g. a future rainbow-cycling brush). |
+| `AbstractSimpleBrush`'s stroke's internal point storage | Compose-observable (`mutableStateListOf<Point>`), satisfying Painting's requirement that a stroke's captured points participate in Compose's draw-phase snapshot observation (see the Painting LLD's Composable Shape) | (1) An immutable stroke — `addPoint()` returns a new copy-on-write instance, with the caller holding the current stroke via whole-value `mutableStateOf` replacement; (2) a plain `kotlinx.coroutines.flow.StateFlow<Int>` revision counter on the caller's side, incremented on every mutating call and collected once via `collectAsState()`, leaving `Stroke`/`Brush` free of any Compose import; (3) `Stroke` exposing its own change-signal (a `Flow` or custom emitter), collected by a bridging composable | Keeps `Stroke`'s existing mutating shape rather than restructuring around immutability or threading a revision/signal layer through its caller. All three alternatives stay viable if a real need to decouple Compose entirely from `Brush`/`Stroke` arises later (none has today) — recorded here so that need doesn't have to rediscover them from scratch. |
+| `ColorSource` as a pluggable interface | `ColorSource` with a single `getNextColor(): Color` method, queried whenever a caller needs one | A plain `Color` value with no abstraction; a `Flow<Color>`-based reactive source | Mirrors `Brush`'s existing pluggable-strategy shape. A pull-based `getNextColor()` matches the query-driven cadence its callers already use (once per stroke, or at construction/clear for a background) — nothing needs to observe a color change between queries, so a reactive stream would be unused machinery. |
+| HSV composed of three independent per-channel `Distribution`s | `RandomColor(hue, saturation, value)`, each an independent `Distribution` | A single joint distribution over RGB or HSV space; hardcoded, non-pluggable HSV sampling logic | Independent per-channel "dials" let each channel vary its own distribution shape (e.g. uniform hue, constant saturation, a linearly-weighted brightness) without a combinatorial explosion of joint-distribution classes for every combination. |
+| `Distribution`'s randomness source | Each concrete `Distribution` holds its own `kotlin.random.Random`, injected at construction (default `Random.Default`) | `sample()` takes a `Random` parameter at call time; no injection at all, always `Random.Default` | Construction-time injection keeps each `Distribution` self-contained and lets a test substitute a scripted fake `Random` per instance without threading one through every caller and every intermediate composing type. |
+| `LinearDistribution`'s sampling algorithm | A mixture of two monotonic branches (`sqrt(random.nextFloat())` and `1 - sqrt(random.nextFloat())`), chosen with probability proportional to the endpoint weights | Invert the distribution's CDF directly by solving the quadratic `(w1-w0)x² + 2w0x - U(w0+w1) = 0` for `x` | The mixture decomposition needs only elementary arithmetic and one square root, with no quadratic-root algebra or branch-sign pitfalls, and produces an identical distribution by construction (a weighted mixture of two linear densities is itself linear, landing exactly on the requested endpoint weights). |
+| `LinearDistribution`'s weight parameters | Read only as a ratio (`weightAtMax / (weightAtMin + weightAtMax)`); default `(0, 1)` | Normalize weights internally to a fixed total; require weights to be probabilities summing to 1 | Since only the ratio matters, any two values in the same proportion are equivalent — so the default doesn't need to match the underlying density function's literal peak value (`2`, for a pure ramp from a zero endpoint); a bare `1` is the least surprising default for a "weight" on its own. |
+
+## Open Questions & Future Decisions
+
+### Deferred
+
+1. The default brush's line width is a visual-design decision, not fixed here.
+2. Whether the default brush needs path smoothing is deferred until its unsmoothed polyline is actually seen in practice.
+3. Whether and how brush choice ever becomes user-facing — a Widgets control, an age-gated bundle entry, or otherwise — is not decided; today it's purely an internal architectural seam with a single implementation behind it.
+4. How a resolved-brush accessor produces a correctly typed *and* colored instance once more than one brush type exists — some kind of type-plus-color factory — is deferred; today, with exactly one brush type, an implementation can just construct that type directly with a color argument.
+5. A brush's color is resolved once, at construction, by whatever produces a resolved brush. An alternative: `AbstractSimpleBrush` could resolve color itself, once per stroke at stroke-creation time from a held `ColorSource`, letting one long-lived brush instance answer for many differently colored strokes instead of a fresh instance being constructed per stroke. This would mean a brush whose color changes mid-stroke (e.g. a future rainbow-cycling brush) could no longer fit the simple-stroke model, since a simple stroke's color would be fixed at its own creation rather than re-resolved per point — an acceptable trade-off if taken, but not decided here. Left as today's simpler design until a concrete need for a longer-lived brush instance appears.
+6. `Distribution` and `ColorSource` have no consumer today beyond `RandomColor`'s three HSV channels — whether either gets reused for something else (a randomized brush line width, for instance) isn't decided; the interfaces don't assume color as their only use.
+7. How a saved stroke identifies which brush *type* produced it — so Painting's restoration mechanism (see the Painting LLD's Lifecycle Survival) can reconstruct the right brush after process death — isn't decided; it depends on open question #4 above (how a resolved-brush accessor identifies brush type at all, not just color).
+
+## References
+
+- Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines Painting Style as what a stroke or background looks like, split out from Painting and User Experience.
+- Root HLD: `docs/high-level-design.md` — Approach (Compose Multiplatform canvas sharing), Key Design Decisions (canvas implemented once, shared across platforms).
+- Sibling: `docs/intent/kid-canvas/painting/painting-design.md` — Stroke Model (the `Point` type this LLD's `Brush`/`Stroke` interfaces reuse), Active Stroke Settings (the query cadence `ColorSource`/`Brush` consumers use), Lifecycle Survival (brush-type restoration after process death).
+- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Interaction Feedback (today's actual `ColorSource`/`Brush` wiring inside Active Stroke Settings' implementation).
