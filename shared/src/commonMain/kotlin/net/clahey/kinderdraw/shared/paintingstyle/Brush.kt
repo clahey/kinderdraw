@@ -1,7 +1,9 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
+
+import net.clahey.kinderdraw.shared.painting.Point
 
 /**
- * A pluggable rendering strategy for strokes — see the Painting LLD's
+ * A pluggable rendering strategy for strokes — see the Painting Style LLD's
  * Brushes section. Owns creating [Stroke] instances, so it's free to pair
  * itself with whatever internal stroke representation its own rendering
  * needs (e.g. a brush with per-point color, not just a flat point list);

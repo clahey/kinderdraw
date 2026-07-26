@@ -1,6 +1,7 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import net.clahey.kinderdraw.shared.painting.Point
 
 /** Records every render call any stroke it started receives, instead of actually drawing anything. */
 class FakeBrush : Brush {

@@ -1,12 +1,12 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.Color
 
-/** A settable, call-counting test double for [ActiveStrokeSettings]. */
-class FakeActiveStrokeSettings(
+/** A settable, call-counting test double for [StyleSettings]. */
+class FakeStyleSettings(
     var brush: Brush = FakeBrush(),
     var background: Color = Color.White,
-) : ActiveStrokeSettings {
+) : StyleSettings {
     var brushQueryCount = 0
         private set
     var backgroundQueryCount = 0

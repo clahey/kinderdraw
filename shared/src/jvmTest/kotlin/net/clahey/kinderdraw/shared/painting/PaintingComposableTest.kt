@@ -11,13 +11,15 @@ import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import net.clahey.kinderdraw.shared.paintingstyle.FakeBrush
+import net.clahey.kinderdraw.shared.paintingstyle.FakeStyleSettings
 
 @OptIn(ExperimentalTestApi::class)
 class PaintingComposableTest {
     // @spec CANVAS-PAINT-018
     @Test
     fun reportsStrokeActiveWhileAGestureIsLive() = runComposeUiTest {
-        val state = PaintingState(FakeActiveStrokeSettings(brush = FakeBrush()))
+        val state = PaintingState(FakeStyleSettings(brush = FakeBrush()))
         var active = false
 
         setContent {
