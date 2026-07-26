@@ -7,7 +7,7 @@ prefix: CANVAS-STYLE
 
 ## Context and Design Philosophy
 
-Painting Style defines what a stroke or the canvas background actually looks like — brush shape and color — independent of how a touch sequence becomes captured stroke data (Painting) or how the screen is orchestrated (User Experience). It's a library of pluggable rendering and color strategies with no state of its own beyond what each strategy instance is constructed with, and no dependency on either component that consumes it: Painting depends on Painting Style for its brush/stroke rendering strategy, and User Experience depends on it for the color sources behind Active Stroke Settings, but Painting Style depends on neither.
+Painting Style defines what a stroke or the canvas background actually looks like — brush shape and color — independent of how a touch sequence becomes captured stroke data (Painting) or how the screen is orchestrated (User Experience). It's a library of pluggable rendering and color strategies with no state of its own beyond what each strategy instance is constructed with, and no dependency on either component that consumes it: Painting depends on Painting Style for its brush/stroke rendering strategy, and User Experience depends on it for the color sources behind `StyleSettings`, but Painting Style depends on neither.
 
 Its `Brush`/`Stroke` interfaces reference `Point` (a captured coordinate, as a fraction of the drawing surface's width/height — see the Painting LLD's Stroke Model), reusing Painting's own coordinate type rather than defining a second one; this is the one place Painting Style takes a dependency on Painting, and it's a plain value type, not a behavioral one.
 
@@ -25,7 +25,7 @@ A brush's color is fixed at the brush instance's own construction, not supplied 
 
 ## Color Sources
 
-`ColorSource` is a plain Kotlin interface — `fun getNextColor(): Color` — pulled from, not pushed to: a caller (an Active Stroke Settings implementation, for example) queries it whenever it needs a color, at whatever cadence that caller already operates on (Painting's own contract queries a brush's color source once per stroke; a background color source is queried at construction and at each `clear()` — see the Painting LLD's Active Stroke Settings section). `ColorSource` itself has no opinion about cadence.
+`ColorSource` is a plain Kotlin interface — `fun getNextColor(): Color` — pulled from, not pushed to: a caller (a `StyleSettings` implementation, for example) queries it whenever it needs a color, at whatever cadence that caller already operates on (see Style Settings below for Painting's own cadence). `ColorSource` itself has no opinion about cadence.
 
 Two implementations exist:
 
@@ -46,6 +46,14 @@ Three implementations exist:
 
 `weightAtMin` and `weightAtMax` must each be non-negative, and not both zero (a negative or all-zero pair has no valid mixture probability).
 
+## Style Settings
+
+`StyleSettings` is the resolved-value interface a consumer queries for the brush and background color currently in effect — `fun getResolvedBrush(): Brush` and `fun getResolvedBackground(): Color` — mirroring the separation the Config LLD's Resolved Features draws between raw state and the value a consumer actually needs.
+
+Painting Style defines `StyleSettings` and its two return types, but — unlike `ColorSource` and `Distribution`, whose implementations live here too — doesn't implement it: deciding what "current" means (a toddler's swatch tap, a config value, or, as today, sampling a `ColorSource`) is inherently about screen orchestration, not styling, so the implementation is owned entirely outside Painting Style (today, by User Experience — see its LLD's Interaction Feedback).
+
+Painting is `StyleSettings`' only consumer today. How and when it queries the interface — once per stroke for the brush, at construction and each `clear()` for the background — is Painting's own contract, not part of this interface's definition (see the Painting LLD's Style Settings section).
+
 ## Decisions & Alternatives
 
 | Decision | Chosen | Alternatives Considered | Rationale |
@@ -59,6 +67,7 @@ Three implementations exist:
 | `Distribution`'s randomness source | Each concrete `Distribution` holds its own `kotlin.random.Random`, injected at construction (default `Random.Default`) | `sample()` takes a `Random` parameter at call time; no injection at all, always `Random.Default` | Construction-time injection keeps each `Distribution` self-contained and lets a test substitute a scripted fake `Random` per instance without threading one through every caller and every intermediate composing type. |
 | `LinearDistribution`'s sampling algorithm | A mixture of two monotonic branches (`sqrt(random.nextFloat())` and `1 - sqrt(random.nextFloat())`), chosen with probability proportional to the endpoint weights | Invert the distribution's CDF directly by solving the quadratic `(w1-w0)x² + 2w0x - U(w0+w1) = 0` for `x` | The mixture decomposition needs only elementary arithmetic and one square root, with no quadratic-root algebra or branch-sign pitfalls, and produces an identical distribution by construction (a weighted mixture of two linear densities is itself linear, landing exactly on the requested endpoint weights). |
 | `LinearDistribution`'s weight parameters | Read only as a ratio (`weightAtMax / (weightAtMin + weightAtMax)`); default `(0, 1)` | Normalize weights internally to a fixed total; require weights to be probabilities summing to 1 | Since only the ratio matters, any two values in the same proportion are equivalent — so the default doesn't need to match the underlying density function's literal peak value (`2`, for a pure ramp from a zero endpoint); a bare `1` is the least surprising default for a "weight" on its own. |
+| `StyleSettings` defined here but implemented outside | Painting Style owns the interface (and its `Brush`/`Color` return types) but not an implementation | Also provide a default/no-op `StyleSettings` implementation here; leave the interface owned by Painting instead, as before this LLD existed | Unlike `ColorSource`/`Distribution`, which Painting Style both defines and implements, deciding what's "current" (a swatch tap, a config value) is inherently about screen orchestration — Painting Style owns only the vocabulary, not the decision. |
 
 ## Open Questions & Future Decisions
 
@@ -76,5 +85,5 @@ Three implementations exist:
 
 - Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines Painting Style as what a stroke or background looks like, split out from Painting and User Experience.
 - Root HLD: `docs/high-level-design.md` — Approach (Compose Multiplatform canvas sharing), Key Design Decisions (canvas implemented once, shared across platforms).
-- Sibling: `docs/intent/kid-canvas/painting/painting-design.md` — Stroke Model (the `Point` type this LLD's `Brush`/`Stroke` interfaces reuse), Active Stroke Settings (the query cadence `ColorSource`/`Brush` consumers use), Lifecycle Survival (brush-type restoration after process death).
-- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Interaction Feedback (today's actual `ColorSource`/`Brush` wiring inside Active Stroke Settings' implementation).
+- Sibling: `docs/intent/kid-canvas/painting/painting-design.md` — Stroke Model (the `Point` type this LLD's `Brush`/`Stroke` interfaces reuse), Style Settings (the query cadence `ColorSource`/`Brush` consumers use), Lifecycle Survival (brush-type restoration after process death).
+- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Interaction Feedback (today's actual `ColorSource`/`Brush` wiring inside `StyleSettings`' implementation).

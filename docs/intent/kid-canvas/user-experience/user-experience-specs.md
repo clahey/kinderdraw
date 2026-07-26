@@ -33,5 +33,5 @@
 
 ## Interaction Feedback
 
-- [D] **CANVAS-UX-017**: When a color swatch is activated, the system shall write that color into Active Stroke Settings as the color for the next resolved brush instance, so Painting's next stroke starts in the new color with no separate acknowledgment step.
+- [D] **CANVAS-UX-017**: When a color swatch is activated, the system shall write that color into `StyleSettings` as the color for the next resolved brush instance, so Painting's next stroke starts in the new color with no separate acknowledgment step.
 - [D] **CANVAS-UX-018**: The system shall provide no feedback for the New Picture sequence beyond the cleared canvas itself — no confirmation banner or toast.
