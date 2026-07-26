@@ -1,4 +1,4 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PointTest {
-    // @spec CANVAS-PAINT-014
+    // @spec CANVAS-STYLE-015
     @Test
     fun convertsToAPixelOffsetProportionalToTheGivenSize() {
         val point = Point(xFraction = 0.25f, yFraction = 0.75f)
@@ -14,7 +14,7 @@ class PointTest {
         assertEquals(Offset(25f, 75f), point.toOffset(Size(100f, 100f)))
     }
 
-    // @spec CANVAS-PAINT-014
+    // @spec CANVAS-STYLE-015
     @Test
     fun sameFractionalPointConvertsToADifferentPixelOffsetAfterAProportionalResize() {
         val point = Point(xFraction = 0.5f, yFraction = 0.5f)

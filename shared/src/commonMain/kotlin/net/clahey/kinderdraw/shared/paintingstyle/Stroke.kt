@@ -1,7 +1,6 @@
 package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import net.clahey.kinderdraw.shared.painting.Point
 
 /**
  * One live pointer's down-to-up sequence — see the Painting LLD's Stroke

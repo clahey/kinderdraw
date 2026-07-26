@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.toSize
+import net.clahey.kinderdraw.shared.paintingstyle.toPoint
 
 /**
  * Owns pointer input for a drawing — see the Painting LLD's Composable

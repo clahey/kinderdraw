@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.userexperience
 
 import androidx.compose.ui.graphics.Color
 import net.clahey.kinderdraw.shared.paintingstyle.Brush
+import net.clahey.kinderdraw.shared.paintingstyle.ColorSource
 import net.clahey.kinderdraw.shared.paintingstyle.ConstantColor
 import net.clahey.kinderdraw.shared.paintingstyle.ConstantDistribution
 import net.clahey.kinderdraw.shared.paintingstyle.DefaultBrush
@@ -18,16 +19,18 @@ import net.clahey.kinderdraw.shared.paintingstyle.UniformDistribution
  * biased toward the bright end rather than sampled uniformly.
  */
 class DefaultStyleSettings : StyleSettings {
-    private val strokeColor = RandomColor(
-        hue = UniformDistribution(),
-        saturation = ConstantDistribution(1f),
-        value = PowerDistribution(exponent = STROKE_BRIGHTNESS_EXPONENT),
+    private val brush: Brush = DefaultBrush(
+        colorSource = RandomColor(
+            hue = UniformDistribution(),
+            saturation = ConstantDistribution(1f),
+            value = PowerDistribution(exponent = STROKE_BRIGHTNESS_EXPONENT),
+        ),
     )
-    private val backgroundColor = ConstantColor(Color.White)
+    private val backgroundColor: ColorSource = ConstantColor(Color.White)
 
-    override fun getResolvedBrush(): Brush = DefaultBrush(strokeColor.getNextColor())
+    override fun getActiveBrush(): Brush = brush
 
-    override fun getResolvedBackground(): Color = backgroundColor.getNextColor()
+    override fun getActiveBackground(): ColorSource = backgroundColor
 
     companion object {
         private const val STROKE_BRIGHTNESS_EXPONENT = 3f

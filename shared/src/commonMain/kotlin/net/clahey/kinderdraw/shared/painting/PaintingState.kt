@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
+import net.clahey.kinderdraw.shared.paintingstyle.Point
 import net.clahey.kinderdraw.shared.paintingstyle.Stroke
 import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
 
@@ -30,11 +31,11 @@ class PaintingState(private val styleSettings: StyleSettings) {
     private var lastRenderSize: Size = Size.Zero
 
     // @spec CANVAS-PAINT-016
-    private var background: Color = styleSettings.getResolvedBackground()
+    private var background: Color = styleSettings.getActiveBackground().getNextColor()
 
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
     fun onPointerDown(point: Point) {
-        liveStroke = styleSettings.getResolvedBrush().startStroke(point)
+        liveStroke = styleSettings.getActiveBrush().startStroke(point)
     }
 
     fun onPointerMove(point: Point) {
@@ -66,7 +67,7 @@ class PaintingState(private val styleSettings: StyleSettings) {
         val interrupted = liveStroke
         completedStrokes.clear()
         liveStroke = interrupted?.restart()
-        background = styleSettings.getResolvedBackground()
+        background = styleSettings.getActiveBackground().getNextColor()
     }
 
     // @spec CANVAS-PAINT-004, CANVAS-PAINT-007, CANVAS-PAINT-016
