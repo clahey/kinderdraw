@@ -1,16 +1,17 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 
 /**
  * A captured point, as a fraction of the drawing surface's width/height at
- * capture time — see the Painting LLD's Stroke Model. Converted to a pixel
- * [Offset] only at render time, against the drawing surface's current size.
+ * capture time — see the Painting Style LLD's Point section. Converted to a
+ * pixel [Offset] only at render time, against the drawing surface's current
+ * size.
  */
 data class Point(val xFraction: Float, val yFraction: Float)
 
-// @spec CANVAS-PAINT-014
+// @spec CANVAS-STYLE-015
 fun Point.toOffset(size: Size): Offset = Offset(xFraction * size.width, yFraction * size.height)
 
 fun Offset.toPoint(size: Size): Point = Point(xFraction = x / size.width, yFraction = y / size.height)

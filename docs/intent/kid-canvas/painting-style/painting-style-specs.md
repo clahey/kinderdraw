@@ -1,11 +1,15 @@
 # Painting Style — EARS Specs
 
+## Point
+
+- [x] **CANVAS-STYLE-015**: The system shall store each captured point as a fraction of the drawing surface's width and height at the moment it was captured, and render it at the corresponding position of the drawing surface's current width and height, so a stroke captured before a proportional resize (e.g. a device rotation preserved under CANVAS-PAINT-011) still renders at the same relative position afterward.
+
 ## Brushes
 
 - [x] **CANVAS-STYLE-001**: The system shall only provide `Brush` implementations whose `Stroke` can render incrementally — extending the visible rendering as each new point is captured, without requiring the stroke's full, final point list in advance.
 - [x] **CANVAS-STYLE-002**: When a stroke created by `DefaultBrush` renders, the system shall draw a fixed-width solid line connecting its captured points as a polyline, with no curve-fitting or smoothing.
-- [x] **CANVAS-STYLE-011**: When a `Stroke`'s `restart()` is called, the system shall produce a new `Stroke` continuing from the current stroke's last captured point, carrying forward the same brush and settings rather than constructing a fresh one.
-- [x] **CANVAS-STYLE-012**: A brush's color shall be fixed at the brush instance's own construction; rendering the same instance more than once shall never use a different color than the one it was constructed with.
+- [x] **CANVAS-STYLE-011**: When a `Stroke`'s `restart()` is called, the system shall produce a new `Stroke` continuing from the current stroke's last captured point, carrying forward the same brush and its already-resolved color — never querying the brush's `ColorSource` again — rather than constructing a fresh one.
+- [x] **CANVAS-STYLE-012**: `AbstractSimpleBrush` shall resolve its color from its `ColorSource` exactly once per stroke, at that stroke's own creation; the resulting `Stroke` shall hold that color fixed for its entire rendering lifetime, never resolving a new one from the brush's `ColorSource` again.
 
 ## Color Sources
 

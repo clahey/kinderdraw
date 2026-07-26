@@ -4,21 +4,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import net.clahey.kinderdraw.shared.painting.Point
-import net.clahey.kinderdraw.shared.painting.toOffset
 
 /**
  * Today's only [Brush]: a fixed-width solid line connecting points as a
  * polyline, with no curve-fitting or smoothing — see this LLD's Brushes
- * section. [color] is fixed at construction (CANVAS-STYLE-012); producing
- * a differently colored instance means constructing a new [DefaultBrush].
+ * section. Holds whatever [ColorSource] it's constructed with; color is
+ * resolved per stroke, not per instance (CANVAS-STYLE-012).
  */
 class DefaultBrush(
-    private val color: Color,
+    colorSource: ColorSource,
     private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX,
-) : AbstractSimpleBrush() {
+) : AbstractSimpleBrush(colorSource) {
     // @spec CANVAS-STYLE-002
-    override fun DrawScope.render(points: List<Point>) {
+    override fun DrawScope.render(points: List<Point>, color: Color) {
         val pixelPoints = points.map { it.toOffset(size) }
         if (pixelPoints.size == 1) {
             drawCircle(color = color, radius = strokeWidthPx / 2f, center = pixelPoints.first())

@@ -12,13 +12,13 @@ class FakeStyleSettings(
     var backgroundQueryCount = 0
         private set
 
-    override fun getResolvedBrush(): Brush {
+    override fun getActiveBrush(): Brush {
         brushQueryCount++
         return brush
     }
 
-    override fun getResolvedBackground(): Color {
+    override fun getActiveBackground(): ColorSource {
         backgroundQueryCount++
-        return background
+        return ConstantColor(background)
     }
 }

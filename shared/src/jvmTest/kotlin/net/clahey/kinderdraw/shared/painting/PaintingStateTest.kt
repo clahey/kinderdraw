@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import net.clahey.kinderdraw.shared.imagestorage.FakeImageStorage
 import net.clahey.kinderdraw.shared.paintingstyle.FakeBrush
 import net.clahey.kinderdraw.shared.paintingstyle.FakeStyleSettings
+import net.clahey.kinderdraw.shared.paintingstyle.Point
 
 class PaintingStateTest {
     private val p0 = Point(0.1f, 0.1f)

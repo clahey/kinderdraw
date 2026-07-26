@@ -4,17 +4,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import net.clahey.kinderdraw.shared.painting.Point
 import net.clahey.kinderdraw.shared.painting.testDrawScope
 
 class DefaultBrushTest {
-    private val brush = DefaultBrush(color = Color.Red, strokeWidthPx = 4f)
+    private val brush = DefaultBrush(colorSource = ConstantColor(Color.Red), strokeWidthPx = 4f)
 
     // @spec CANVAS-STYLE-002
     @Test
     fun singlePointTapRendersAVisibleMark() {
         val bitmap = testDrawScope(width = 20, height = 20) {
-            with(brush) { render(listOf(Point(0.5f, 0.5f))) }
+            with(brush) { render(listOf(Point(0.5f, 0.5f)), Color.Red) }
         }
         val pixels = bitmap.toPixelMap()
 
@@ -27,7 +26,7 @@ class DefaultBrushTest {
     fun multiPointStrokeRendersAConnectingLine() {
         val bitmap = testDrawScope(width = 20, height = 20) {
             with(brush) {
-                render(listOf(Point(0.1f, 0.5f), Point(0.9f, 0.5f)))
+                render(listOf(Point(0.1f, 0.5f), Point(0.9f, 0.5f)), Color.Red)
             }
         }
         val pixels = bitmap.toPixelMap()
@@ -43,11 +42,11 @@ class DefaultBrushTest {
     fun rendersCorrectlyWhenCalledRepeatedlyWithAGrowingPointList() {
         val points = mutableListOf(Point(0.1f, 0.5f))
         val bitmapAfterFirstPoint = testDrawScope(width = 20, height = 20) {
-            with(brush) { render(points) }
+            with(brush) { render(points, Color.Red) }
         }
         points.add(Point(0.9f, 0.5f))
         val bitmapAfterSecondPoint = testDrawScope(width = 20, height = 20) {
-            with(brush) { render(points) }
+            with(brush) { render(points, Color.Red) }
         }
 
         // Rendering the one-point list drew only a mark at that point, not a line...
@@ -58,12 +57,11 @@ class DefaultBrushTest {
         assertEquals(Color.Red, bitmapAfterSecondPoint.toPixelMap()[10, 10])
     }
 
-    // @spec CANVAS-STYLE-012
+    // @spec CANVAS-STYLE-002
     @Test
-    fun colorIsFixedAtConstruction() {
-        val blueBrush = DefaultBrush(color = Color.Blue, strokeWidthPx = 4f)
+    fun rendersWithWhateverColorItsGiven() {
         val bitmap = testDrawScope(width = 20, height = 20) {
-            with(blueBrush) { render(listOf(Point(0.5f, 0.5f))) }
+            with(brush) { render(listOf(Point(0.5f, 0.5f)), Color.Blue) }
         }
 
         assertEquals(Color.Blue, bitmap.toPixelMap()[10, 10])
