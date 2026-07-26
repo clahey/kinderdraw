@@ -19,7 +19,7 @@ Painting's data — the completed strokes and the live stroke in `PaintingState`
 
 Because every layer of state that changes as a stroke progresses is Compose-observable snapshot state — not just `PaintingState`'s own stroke list, but each stroke's own captured points (see the Painting Style LLD's Brushes section) — Compose's draw-phase snapshot observation is what triggers a redraw as a stroke grows, with no caller-driven invalidation needed.
 
-`isEmpty()`, `save()`, and `clear()` remain `PaintingState`'s own operations, called directly by whoever holds the state — today, `KidCanvasScreen`; eventually User Experience — via `remember { PaintingState(activeStrokeSettings) }`, passing that same instance to both the `Painting` composable and its own lifecycle calls. They aren't routed through the composable, which only ever forwards pointer events into the state it's given.
+`isEmpty()`, `save()`, and `clear()` remain `PaintingState`'s own operations, called directly by whoever holds the state — today, `KidCanvasScreen`; eventually User Experience — via `remember { PaintingState(styleSettings) }`, passing that same instance to both the `Painting` composable and its own lifecycle calls. They aren't routed through the composable, which only ever forwards pointer events into the state it's given.
 
 ## Reporting Stroke State
 

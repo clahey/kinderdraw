@@ -1,6 +1,7 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import net.clahey.kinderdraw.shared.painting.Point
 
 /**
  * One live pointer's down-to-up sequence — see the Painting LLD's Stroke
@@ -16,8 +17,8 @@ interface Stroke {
 
     /**
      * Produces the stroke that continues from this one's current end
-     * point with the same settings — see the Painting LLD's mid-stroke
-     * `clear()` behavior (CANVAS-PAINT-013).
+     * point with the same settings — see this LLD's Brushes section
+     * (CANVAS-STYLE-011).
      */
     fun restart(): Stroke
 }

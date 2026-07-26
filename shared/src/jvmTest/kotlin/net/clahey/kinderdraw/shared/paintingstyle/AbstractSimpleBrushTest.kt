@@ -1,8 +1,10 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import net.clahey.kinderdraw.shared.painting.Point
+import net.clahey.kinderdraw.shared.painting.testDrawScope
 
 /** Records the point list passed to [render] on each call, instead of actually drawing anything. */
 private class RecordingSimpleBrush : AbstractSimpleBrush() {
@@ -14,7 +16,7 @@ private class RecordingSimpleBrush : AbstractSimpleBrush() {
 }
 
 class AbstractSimpleBrushTest {
-    // @spec CANVAS-PAINT-005, CANVAS-PAINT-007
+    // @spec CANVAS-STYLE-001
     @Test
     fun addPointExtendsWhatTheStrokeRenders() {
         val brush = RecordingSimpleBrush()
@@ -30,7 +32,7 @@ class AbstractSimpleBrushTest {
         )
     }
 
-    // @spec CANVAS-PAINT-013
+    // @spec CANVAS-STYLE-011
     @Test
     fun restartProducesAStrokeContinuingFromTheLastPointWithTheSameBrush() {
         val brush = RecordingSimpleBrush()

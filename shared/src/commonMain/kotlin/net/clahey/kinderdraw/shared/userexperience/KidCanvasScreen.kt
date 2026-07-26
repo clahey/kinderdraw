@@ -13,6 +13,6 @@ import net.clahey.kinderdraw.shared.painting.PaintingState
  * Questions on deferred Widgets/Config wiring).
  */
 @Composable
-fun KidCanvasScreen(state: PaintingState = remember { PaintingState(DefaultActiveStrokeSettings()) }) {
+fun KidCanvasScreen(state: PaintingState = remember { PaintingState(DefaultStyleSettings()) }) {
     Painting(state = state, modifier = Modifier.fillMaxSize())
 }

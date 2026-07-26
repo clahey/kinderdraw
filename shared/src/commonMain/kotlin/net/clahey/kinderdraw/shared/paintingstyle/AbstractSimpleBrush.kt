@@ -1,14 +1,15 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import net.clahey.kinderdraw.shared.painting.Point
 
 /**
  * Base [Brush] for the common case: a stroke that's just a flat, ordered
  * point list, rendered by a single function seeded with every point
- * captured so far — see the Painting LLD's Brushes section. Its points are
- * held as Compose-observable state so [DrawScope.render] redraws as each
- * new point arrives (see the Painting LLD's Composable Shape).
+ * captured so far — see this LLD's Brushes section. Its points are held
+ * as Compose-observable state so [DrawScope.render] redraws as each new
+ * point arrives (see the Painting LLD's Composable Shape).
  */
 abstract class AbstractSimpleBrush : Brush {
     abstract fun DrawScope.render(points: List<Point>)
@@ -18,6 +19,7 @@ abstract class AbstractSimpleBrush : Brush {
     private class SimpleStroke(private val brush: AbstractSimpleBrush) : Stroke {
         private val mutablePoints = mutableStateListOf<Point>()
 
+        // @spec CANVAS-STYLE-001
         override fun addPoint(point: Point) {
             mutablePoints.add(point)
         }
@@ -26,6 +28,7 @@ abstract class AbstractSimpleBrush : Brush {
             with(brush) { render(mutablePoints.toList()) }
         }
 
+        // @spec CANVAS-STYLE-011
         override fun restart(): Stroke = brush.startStroke(mutablePoints.last())
     }
 }

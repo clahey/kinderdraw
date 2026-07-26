@@ -1,14 +1,16 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import net.clahey.kinderdraw.shared.painting.Point
+import net.clahey.kinderdraw.shared.painting.testDrawScope
 
 class DefaultBrushTest {
     private val brush = DefaultBrush(color = Color.Red, strokeWidthPx = 4f)
 
-    // @spec CANVAS-PAINT-006
+    // @spec CANVAS-STYLE-002
     @Test
     fun singlePointTapRendersAVisibleMark() {
         val bitmap = testDrawScope(width = 20, height = 20) {
@@ -20,7 +22,7 @@ class DefaultBrushTest {
         assertEquals(Color.Transparent, pixels[1, 1])
     }
 
-    // @spec CANVAS-PAINT-006
+    // @spec CANVAS-STYLE-002
     @Test
     fun multiPointStrokeRendersAConnectingLine() {
         val bitmap = testDrawScope(width = 20, height = 20) {
@@ -36,7 +38,7 @@ class DefaultBrushTest {
         assertEquals(Color.Transparent, pixels[1, 1])
     }
 
-    // @spec CANVAS-PAINT-005
+    // @spec CANVAS-STYLE-001
     @Test
     fun rendersCorrectlyWhenCalledRepeatedlyWithAGrowingPointList() {
         val points = mutableListOf(Point(0.1f, 0.5f))
@@ -56,7 +58,7 @@ class DefaultBrushTest {
         assertEquals(Color.Red, bitmapAfterSecondPoint.toPixelMap()[10, 10])
     }
 
-    // @spec CANVAS-PAINT-006
+    // @spec CANVAS-STYLE-012
     @Test
     fun colorIsFixedAtConstruction() {
         val blueBrush = DefaultBrush(color = Color.Blue, strokeWidthPx = 4f)

@@ -1,21 +1,23 @@
-package net.clahey.kinderdraw.shared.painting
+package net.clahey.kinderdraw.shared.paintingstyle
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import net.clahey.kinderdraw.shared.painting.Point
+import net.clahey.kinderdraw.shared.painting.toOffset
 
 /**
  * Today's only [Brush]: a fixed-width solid line connecting points as a
- * polyline, with no curve-fitting or smoothing — see the Painting LLD's
- * Brushes section. [color] is fixed at construction; producing a
- * differently colored instance means constructing a new [DefaultBrush].
+ * polyline, with no curve-fitting or smoothing — see this LLD's Brushes
+ * section. [color] is fixed at construction (CANVAS-STYLE-012); producing
+ * a differently colored instance means constructing a new [DefaultBrush].
  */
 class DefaultBrush(
     private val color: Color,
     private val strokeWidthPx: Float = DEFAULT_STROKE_WIDTH_PX,
 ) : AbstractSimpleBrush() {
-    // @spec CANVAS-PAINT-005, CANVAS-PAINT-006
+    // @spec CANVAS-STYLE-002
     override fun DrawScope.render(points: List<Point>) {
         val pixelPoints = points.map { it.toOffset(size) }
         if (pixelPoints.size == 1) {

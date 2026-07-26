@@ -13,26 +13,28 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
+import net.clahey.kinderdraw.shared.paintingstyle.Stroke
+import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
 
 /**
  * A drawing's Compose-observable state — see the Painting LLD's Composable
  * Shape. Holds the completed strokes and any live stroke; a stroke's own
  * captured points are Compose-observable within the stroke implementation
- * itself (see the Painting LLD's Decisions & Alternatives). Pointer events
- * are forwarded into this state by the [Painting] composable, which owns
- * the actual pointer input.
+ * itself (see the Painting Style LLD's Decisions & Alternatives). Pointer
+ * events are forwarded into this state by the [Painting] composable, which
+ * owns the actual pointer input.
  */
-class PaintingState(private val activeStrokeSettings: ActiveStrokeSettings) {
+class PaintingState(private val styleSettings: StyleSettings) {
     private val completedStrokes = mutableStateListOf<Stroke>()
     private var liveStroke by mutableStateOf<Stroke?>(null)
     private var lastRenderSize: Size = Size.Zero
 
     // @spec CANVAS-PAINT-016
-    private var background: Color = activeStrokeSettings.getResolvedBackground()
+    private var background: Color = styleSettings.getResolvedBackground()
 
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
     fun onPointerDown(point: Point) {
-        liveStroke = activeStrokeSettings.getResolvedBrush().startStroke(point)
+        liveStroke = styleSettings.getResolvedBrush().startStroke(point)
     }
 
     fun onPointerMove(point: Point) {
@@ -64,7 +66,7 @@ class PaintingState(private val activeStrokeSettings: ActiveStrokeSettings) {
         val interrupted = liveStroke
         completedStrokes.clear()
         liveStroke = interrupted?.restart()
-        background = activeStrokeSettings.getResolvedBackground()
+        background = styleSettings.getResolvedBackground()
     }
 
     // @spec CANVAS-PAINT-004, CANVAS-PAINT-007, CANVAS-PAINT-016
