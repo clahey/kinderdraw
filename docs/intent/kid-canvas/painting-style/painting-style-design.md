@@ -30,7 +30,7 @@ A brush's color is fixed at the brush instance's own construction, not supplied 
 Two implementations exist:
 
 - **`ConstantColor(color)`** — always returns the same color.
-- **`RandomColor(hue, saturation, value)`** — composes a color from three independent `Distribution` "dials," one per HSV channel, each sampled fresh on every `getNextColor()` call. `RandomColor` holds no `Random` of its own — each `Distribution` it's given already owns one. Saturation and value are already fractions in `[0, 1]`; hue is stored as a `[0, 1]` fraction of the full color wheel and scaled to degrees when constructing the resulting color, matching how each `Distribution` is configured.
+- **`RandomColor(hue, saturation, value)`** — composes a color from three independent `Distribution` "dials," one per HSV channel, each sampled fresh on every `getNextColor()` call. `RandomColor` holds no `Random` of its own — each `Distribution` it's given already owns one. Saturation and value are expected to be fractions in `[0, 1]`; hue is a `[0, 1]` fraction of the full color wheel, scaled to degrees when constructing the resulting color. `RandomColor` clamps its sampled saturation and value into `[0, 1]` before composing the color, rather than trusting a caller's `Distribution` to already be configured within range.
 
 Composing HSV from three independently-distributed channels, rather than one joint distribution over color space, is what lets each channel vary on its own shape — a uniform hue with a non-uniform value channel, for instance — without a combinatorial explosion of joint-distribution classes for every combination anyone might want.
 
@@ -44,7 +44,7 @@ Three implementations exist:
 - **`UniformDistribution(min, max, random)`** — every value in `[min, max]` is equally likely.
 - **`LinearDistribution(min, max, weightAtMin, weightAtMax, random)`** — density increases or decreases linearly across `[min, max]`, with relative density `weightAtMin` at one end and `weightAtMax` at the other. Sampled as a mixture of two branches rather than by inverting the distribution's CDF directly: with probability `weightAtMax / (weightAtMin + weightAtMax)`, sample the increasing branch `sqrt(random.nextFloat())`; otherwise sample the decreasing branch `1 - sqrt(random.nextFloat())` — both are themselves linear (the max, respectively min, of two independent uniform samples, produced via inverse-CDF without solving anything but a square root), and a probability-weighted mixture of two linear densities is itself linear, landing exactly on the requested endpoint weights. Both branches are then scaled from `[0, 1]` into `[min, max]`. `weightAtMin` and `weightAtMax` are read only as a ratio — any two values in the same proportion produce an identical distribution — so they default to `(0, 1)`: a pure increasing ramp, and the least surprising default for a "weight" (a bare `1`, not a value that only makes sense once you know the underlying density function peaks at `2`).
 
-`weightAtMin` and `weightAtMax` must each be non-negative, and not both zero (a negative or all-zero pair has no valid mixture probability).
+`weightAtMin` and `weightAtMax` must each be non-negative, and not both zero (a negative or all-zero pair has no valid mixture probability). `UniformDistribution` and `LinearDistribution` both also require `min` to be no greater than `max` — a reversed range is rejected rather than silently producing an inverted or negative-width distribution.
 
 ## Style Settings
 

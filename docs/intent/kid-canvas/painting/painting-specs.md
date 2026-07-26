@@ -13,8 +13,6 @@
 ## Brushes
 
 - [x] **CANVAS-PAINT-004**: The system shall delegate all rendering of a stroke's captured points to that stroke's active brush (line width, shape, color, point interpolation, and any other visual effect), performing no point-to-pixel rendering decisions of its own.
-- [x] **CANVAS-PAINT-005**: The system shall only accept brush implementations that can render a stroke incrementally — extending the visible rendering as each new point is captured, without requiring the stroke's full, final point list in advance.
-- [x] **CANVAS-PAINT-006**: The system shall render every stroke using its single default brush (today's only implementation satisfying the brush interface): a fixed-width solid line connecting points as a polyline, with no curve-fitting or smoothing.
 
 ## Rendering
 
