@@ -19,7 +19,8 @@
 
 ## Lifecycle Behavior — New Picture
 
-- [D] **CANVAS-UX-009**: When the New Picture control is activated, the system shall hold the live-gesture slot for the entire sequence below, from activation through the clear step completing, so no other control-press or stroke can start until it finishes.
+- [D] **CANVAS-UX-009**: When New Picture's pointer is claimed (`onPressedChange(true)`), the system shall hold the live-gesture slot from that moment through that same pointer's release, so no other control-press or stroke can start during the press itself — regardless of whether the release goes on to activate New Picture.
+- [D] **CANVAS-UX-019**: When New Picture activates (`onActivate`), the system shall run the sequence below under the live-gesture slot already held since the press's claim, extending that hold through the sequence's completion rather than releasing it at the press's own release.
 - [D] **CANVAS-UX-010**: When the New Picture sequence runs, the system shall first ask Painting whether the current drawing is empty.
 - [D] **CANVAS-UX-011**: When the New Picture sequence's emptiness check reports the drawing is not empty, the system shall call Painting's save operation (with no id, since this is the drawing's first save) before clearing, writing the drawing to Image Storage.
 - [D] **CANVAS-UX-012**: When the New Picture sequence's emptiness check reports the drawing is empty, the system shall skip the save call entirely, writing nothing to Image Storage.
