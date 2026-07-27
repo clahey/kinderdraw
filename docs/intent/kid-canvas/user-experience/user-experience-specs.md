@@ -29,7 +29,7 @@
 ## Lifecycle Behavior — OS Navigation and Process Lifecycle
 
 - [D] **CANVAS-UX-015**: When the OS back gesture or button fires while the kid canvas is shown, the system shall consume it and not navigate the toddler out of the kid canvas.
-- [D] **CANVAS-UX-016**: When the OS recreates the process's UI within its own saved-instance-state mechanism (a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current in-progress drawing exactly as it stood, without invoking the New Picture save path. Deferred alongside Painting's CANVAS-PAINT-011/CANVAS-PAINT-015, which this depends on.
+- [D] **CANVAS-UX-016**: When the OS recreates the process's UI within its own saved-instance-state mechanism (a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current in-progress drawing exactly as it stood, without invoking the New Picture save path. Deferred alongside Painting's CANVAS-PAINT-011 and CANVAS-PAINT-019, which this depends on.
 
 ## Interaction Feedback
 

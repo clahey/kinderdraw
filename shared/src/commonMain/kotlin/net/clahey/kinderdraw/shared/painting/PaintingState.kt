@@ -3,6 +3,7 @@ package net.clahey.kinderdraw.shared.painting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
@@ -10,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
@@ -24,14 +26,24 @@ import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
  * itself (see the Painting Style LLD's Decisions & Alternatives). Pointer
  * events are forwarded into this state by the [Painting] composable, which
  * owns the actual pointer input.
+ *
+ * [initialBackground] and [initialStrokes] exist only for
+ * [paintingStateSaver]'s restore path — ordinary construction leaves both
+ * unset, resolving the background from [styleSettings] and starting with no
+ * strokes, exactly as if they didn't exist (see the Painting LLD's
+ * Lifecycle Survival).
  */
-class PaintingState(private val styleSettings: StyleSettings) {
-    private val completedStrokes = mutableStateListOf<Stroke>()
+class PaintingState(
+    private val styleSettings: StyleSettings,
+    initialBackground: Color? = null,
+    initialStrokes: List<Stroke> = emptyList(),
+) {
+    private val completedStrokes = mutableStateListOf<Stroke>().apply { addAll(initialStrokes) }
     private var liveStroke by mutableStateOf<Stroke?>(null)
     private var lastRenderSize: Size = Size.Zero
 
-    // @spec CANVAS-PAINT-016
-    private var background: Color = styleSettings.getActiveBackground().getNextColor()
+    // @spec CANVAS-PAINT-016, CANVAS-PAINT-019
+    private var background: Color = initialBackground ?: styleSettings.getActiveBackground().getNextColor()
 
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
     fun onPointerDown(point: Point) {
@@ -95,4 +107,32 @@ class PaintingState(private val styleSettings: StyleSettings) {
         }
         return image
     }
+
+    /** Every stroke to persist across an OS-driven recreation, live one included — see [paintingStateSaver]. */
+    internal fun strokesToSave(): List<Stroke> = completedStrokes + listOfNotNull(liveStroke)
+
+    /** The background currently in effect — see [paintingStateSaver]. */
+    internal fun currentBackground(): Color = background
 }
+
+/**
+ * Builds the [Saver] that lets [PaintingState] survive an OS-driven
+ * recreation via `rememberSaveable` — see the Painting LLD's Lifecycle
+ * Survival (CANVAS-PAINT-011, CANVAS-PAINT-019). [styleSettings] is
+ * captured by closure since [Saver.restore] is a pure function of only the
+ * saved data, but reconstructing [PaintingState] needs a live reference.
+ */
+fun paintingStateSaver(styleSettings: StyleSettings): Saver<PaintingState, Map<String, Any?>> = Saver(
+    save = { state ->
+        mapOf(
+            "background" to state.currentBackground().toArgb(),
+            "strokes" to state.strokesToSave().map { it.save() },
+        )
+    },
+    restore = { saved ->
+        val background = Color(saved.getValue("background") as Int)
+        val savedStrokes = saved.getValue("strokes") as List<Map<String, Any?>>
+        val strokes = savedStrokes.map { styleSettings.getActiveBrush().restore(it) }
+        PaintingState(styleSettings, initialBackground = background, initialStrokes = strokes)
+    },
+)

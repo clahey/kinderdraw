@@ -13,7 +13,7 @@ class DefaultBrushTest {
     @Test
     fun singlePointTapRendersAVisibleMark() {
         val bitmap = testDrawScope(width = 20, height = 20) {
-            with(brush) { render(listOf(Point(0.5f, 0.5f)), Color.Red) }
+            with(brush) { render(listOf(Point(0f, 0f)), Color.Red) }
         }
         val pixels = bitmap.toPixelMap()
 
@@ -26,7 +26,7 @@ class DefaultBrushTest {
     fun multiPointStrokeRendersAConnectingLine() {
         val bitmap = testDrawScope(width = 20, height = 20) {
             with(brush) {
-                render(listOf(Point(0.1f, 0.5f), Point(0.9f, 0.5f)), Color.Red)
+                render(listOf(Point(-0.4f, 0f), Point(0.4f, 0f)), Color.Red)
             }
         }
         val pixels = bitmap.toPixelMap()
@@ -40,11 +40,11 @@ class DefaultBrushTest {
     // @spec CANVAS-STYLE-001
     @Test
     fun rendersCorrectlyWhenCalledRepeatedlyWithAGrowingPointList() {
-        val points = mutableListOf(Point(0.1f, 0.5f))
+        val points = mutableListOf(Point(-0.4f, 0f))
         val bitmapAfterFirstPoint = testDrawScope(width = 20, height = 20) {
             with(brush) { render(points, Color.Red) }
         }
-        points.add(Point(0.9f, 0.5f))
+        points.add(Point(0.4f, 0f))
         val bitmapAfterSecondPoint = testDrawScope(width = 20, height = 20) {
             with(brush) { render(points, Color.Red) }
         }
@@ -61,7 +61,7 @@ class DefaultBrushTest {
     @Test
     fun rendersWithWhateverColorItsGiven() {
         val bitmap = testDrawScope(width = 20, height = 20) {
-            with(brush) { render(listOf(Point(0.5f, 0.5f)), Color.Blue) }
+            with(brush) { render(listOf(Point(0f, 0f)), Color.Blue) }
         }
 
         assertEquals(Color.Blue, bitmap.toPixelMap()[10, 10])

@@ -2,7 +2,7 @@
 
 ## Point
 
-- [x] **CANVAS-STYLE-015**: The system shall store each captured point as a fraction of the drawing surface's width and height at the moment it was captured, and render it at the corresponding position of the drawing surface's current width and height, so a stroke captured before a proportional resize (e.g. a device rotation preserved under CANVAS-PAINT-011) still renders at the same relative position afterward.
+- [x] **CANVAS-STYLE-015**: The system shall store each captured point relative to the drawing surface's center, with both axes scaled by the shorter of the drawing surface's width and height at the moment it was captured, and render it at the corresponding position relative to the drawing surface's current center and shorter dimension — so a stroke's shape is preserved across any resize, including one that changes the drawing surface's aspect ratio (e.g. a device rotation, preserved under CANVAS-PAINT-011).
 
 ## Brushes
 
@@ -10,6 +10,8 @@
 - [x] **CANVAS-STYLE-002**: When a stroke created by `DefaultBrush` renders, the system shall draw a fixed-width solid line connecting its captured points as a polyline, with no curve-fitting or smoothing.
 - [x] **CANVAS-STYLE-011**: When a `Stroke`'s `restart()` is called, the system shall produce a new `Stroke` continuing from the current stroke's last captured point, carrying forward the same brush and its already-resolved color — never querying the brush's `ColorSource` again — rather than constructing a fresh one.
 - [x] **CANVAS-STYLE-012**: `AbstractSimpleBrush` shall resolve its color from its `ColorSource` exactly once per stroke, at that stroke's own creation; the resulting `Stroke` shall hold that color fixed for its entire rendering lifetime, never resolving a new one from the brush's `ColorSource` again.
+- [x] **CANVAS-STYLE-016**: When a `Stroke`'s `save()` is called, the system shall return a map containing enough data to reconstruct an equivalent stroke — for `AbstractSimpleBrush`'s stroke, its captured points and its already-resolved color.
+- [x] **CANVAS-STYLE-017**: When a `Brush`'s `restore()` is called with a previously-saved stroke's map, the system shall reconstruct a `Stroke` with the same points and, for `AbstractSimpleBrush`, the same color as when it was saved, without resolving a new color from the brush's `ColorSource`.
 
 ## Color Sources
 

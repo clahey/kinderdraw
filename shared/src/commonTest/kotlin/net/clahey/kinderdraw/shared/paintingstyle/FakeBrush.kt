@@ -7,10 +7,16 @@ class FakeBrush : Brush {
     private val mutableRenderCalls = mutableListOf<List<Point>>()
     val renderCalls: List<List<Point>> get() = mutableRenderCalls
 
-    override fun startStroke(point: Point): Stroke = FakeStroke(this).apply { addPoint(point) }
+    override fun startStroke(point: Point): Stroke = FakeStroke(this, initialPoints = listOf(point))
 
-    private class FakeStroke(private val brush: FakeBrush) : Stroke {
-        private val mutablePoints = mutableListOf<Point>()
+    override fun restore(saved: Map<String, Any?>): Stroke {
+        @Suppress("UNCHECKED_CAST")
+        val points = saved.getValue("points") as List<Point>
+        return FakeStroke(this, initialPoints = points)
+    }
+
+    private class FakeStroke(private val brush: FakeBrush, initialPoints: List<Point>) : Stroke {
+        private val mutablePoints = mutableListOf<Point>().apply { addAll(initialPoints) }
 
         override fun addPoint(point: Point) {
             mutablePoints.add(point)
@@ -21,5 +27,7 @@ class FakeBrush : Brush {
         }
 
         override fun restart(): Stroke = brush.startStroke(mutablePoints.last())
+
+        override fun save(): Map<String, Any?> = mapOf("points" to mutablePoints.toList())
     }
 }

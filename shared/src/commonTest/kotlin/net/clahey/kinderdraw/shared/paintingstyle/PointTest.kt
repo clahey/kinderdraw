@@ -8,39 +8,52 @@ import kotlin.test.assertEquals
 class PointTest {
     // @spec CANVAS-STYLE-015
     @Test
-    fun convertsToAPixelOffsetProportionalToTheGivenSize() {
-        val point = Point(xFraction = 0.25f, yFraction = 0.75f)
+    fun centerPointConvertsToTheOffsetAtTheCanvasCenter() {
+        val point = Point(0f, 0f)
 
-        assertEquals(Offset(25f, 75f), point.toOffset(Size(100f, 100f)))
+        assertEquals(Offset(50f, 40f), point.toOffset(Size(100f, 80f)))
     }
 
     // @spec CANVAS-STYLE-015
     @Test
-    fun sameFractionalPointConvertsToADifferentPixelOffsetAfterAProportionalResize() {
-        val point = Point(xFraction = 0.5f, yFraction = 0.5f)
+    fun convertsToAnOffsetScaledByTheShorterDimension() {
+        // Size(200, 100): the shorter dimension is the height, 100.
+        val point = Point(0.5f, 0.5f)
 
-        val beforeResize = point.toOffset(Size(100f, 200f))
-        val afterResize = point.toOffset(Size(200f, 400f))
-
-        assertEquals(Offset(50f, 100f), beforeResize)
-        assertEquals(Offset(100f, 200f), afterResize)
-        // Same relative position (the center) both times.
-        assertEquals(0.5f, beforeResize.x / 100f)
-        assertEquals(0.5f, afterResize.x / 200f)
+        assertEquals(Offset(150f, 100f), point.toOffset(Size(200f, 100f)))
     }
 
+    // @spec CANVAS-STYLE-015
     @Test
-    fun offsetConvertsToAPointFractionalWithinTheGivenSize() {
-        val offset = Offset(25f, 75f)
+    fun pointsLeftOfOrAboveCenterAreNegative() {
+        val offset = Offset(10f, 10f)
 
-        assertEquals(Point(xFraction = 0.25f, yFraction = 0.75f), offset.toPoint(Size(100f, 100f)))
+        assertEquals(Point(-0.4f, -0.4f), offset.toPoint(Size(100f, 100f)))
     }
 
+    // @spec CANVAS-STYLE-015
     @Test
     fun offsetToPointAndBackRoundTrips() {
-        val point = Point(xFraction = 0.3f, yFraction = 0.6f)
+        val point = Point(0.3f, -0.6f)
         val size = Size(320f, 480f)
 
         assertEquals(point, point.toOffset(size).toPoint(size))
+    }
+
+    // @spec CANVAS-STYLE-015
+    @Test
+    fun aPureRotationReproducesTheSameOffsetRelativeToCenterAlongTheUnchangedShorterDimension() {
+        // A pure rotation swaps width and height without changing the shorter
+        // dimension's value (200 here), so a point's offset relative to the
+        // new center lands the same pixel distance from center either way.
+        val point = Point(0.25f, 0f)
+        val portrait = Size(200f, 300f)
+        val landscape = Size(300f, 200f)
+
+        val inPortrait = point.toOffset(portrait)
+        val inLandscape = point.toOffset(landscape)
+
+        assertEquals(50f, inPortrait.x - portrait.width / 2f)
+        assertEquals(50f, inLandscape.x - landscape.width / 2f)
     }
 }
