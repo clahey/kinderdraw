@@ -9,4 +9,11 @@ package net.clahey.kinderdraw.shared.paintingstyle
  */
 interface Brush {
     fun startStroke(point: Point): Stroke
+
+    /**
+     * Reconstructs a stroke from a previously saved [Stroke.save] map — see
+     * the Painting Style LLD's Save and Restore (CANVAS-STYLE-017). Never
+     * resolves a new color from this brush's `ColorSource`.
+     */
+    fun restore(saved: Map<String, Any?>): Stroke
 }

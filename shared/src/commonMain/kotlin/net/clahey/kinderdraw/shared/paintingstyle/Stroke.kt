@@ -20,4 +20,11 @@ interface Stroke {
      * (CANVAS-STYLE-011).
      */
     fun restart(): Stroke
+
+    /**
+     * Returns enough data for this stroke's brush to reconstruct an
+     * equivalent stroke via [Brush.restore] — see the Painting Style LLD's
+     * Save and Restore (CANVAS-STYLE-016).
+     */
+    fun save(): Map<String, Any?>
 }

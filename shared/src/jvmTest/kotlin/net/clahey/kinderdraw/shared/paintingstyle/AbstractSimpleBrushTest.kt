@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import net.clahey.kinderdraw.shared.painting.testDrawScope
 
 /** Records the point list and color passed to [render] on each call, instead of actually drawing anything. */
@@ -78,6 +79,49 @@ class AbstractSimpleBrushTest {
         testDrawScope { with(restarted) { render() } }
 
         // If restart() had queried the ColorSource again, this would be Color.Blue.
+        assertEquals(Color.Red, brush.renderCalls.single().second)
+    }
+
+    // @spec CANVAS-STYLE-016
+    @Test
+    fun saveExposesPointsAndColorByName() {
+        val brush = RecordingSimpleBrush(ConstantColor(Color.Blue))
+        val stroke = brush.startStroke(Point(0.2f, 0.4f))
+
+        val saved = stroke.save()
+
+        assertTrue(saved.containsKey("color"))
+        assertTrue(saved.containsKey("points"))
+    }
+
+    // @spec CANVAS-STYLE-016, CANVAS-STYLE-017
+    @Test
+    fun restoringASavedStrokeReproducesTheSamePointsAndColor() {
+        val brush = RecordingSimpleBrush(ConstantColor(Color.Red))
+        val original = brush.startStroke(Point(0.1f, 0.5f))
+        original.addPoint(Point(0.9f, 0.5f))
+
+        val restored = brush.restore(original.save())
+        testDrawScope { with(restored) { render() } }
+
+        assertEquals(
+            listOf(Point(0.1f, 0.5f), Point(0.9f, 0.5f)) to Color.Red,
+            brush.renderCalls.single(),
+        )
+    }
+
+    // @spec CANVAS-STYLE-017
+    @Test
+    fun restoreDoesNotQueryTheColorSourceAgain() {
+        val colorSource = FakeColorSource(listOf(Color.Red, Color.Blue))
+        val brush = RecordingSimpleBrush(colorSource)
+        val original = brush.startStroke(Point(0.1f, 0.5f))
+        val saved = original.save()
+
+        // If restore() queried the ColorSource again, this would consume Color.Blue.
+        val restored = brush.restore(saved)
+        testDrawScope { with(restored) { render() } }
+
         assertEquals(Color.Red, brush.renderCalls.single().second)
     }
 }
