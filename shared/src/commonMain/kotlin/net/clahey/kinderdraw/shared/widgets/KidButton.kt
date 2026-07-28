@@ -24,7 +24,9 @@ private val MIN_TOUCH_TARGET_DP = 64.dp
  * semantics. [content] is given the current pressed state so a caller can
  * render its own visual feedback (see the LLD's Open Questions — exact
  * appearance isn't fixed here); [KidButton] itself only owns hit-testing,
- * timing, and callback dispatch.
+ * timing, and callback dispatch. Its hit region is also registered with the
+ * platform as excluded from system gesture navigation (see the LLD's System
+ * Gesture Coexistence), regardless of where a caller places it.
  */
 @Composable
 fun KidButton(
@@ -47,6 +49,7 @@ fun KidButton(
     Box(
         modifier = modifier
             .defaultMinSize(minWidth = MIN_TOUCH_TARGET_DP, minHeight = MIN_TOUCH_TARGET_DP)
+            .excludeFromSystemGestures()
             .pointerInput(pressState) {
                 awaitPointerEventScope {
                     while (true) {

@@ -1,12 +1,15 @@
 package net.clahey.kinderdraw.shared.userexperience
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,7 +19,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
@@ -30,6 +35,16 @@ import net.clahey.kinderdraw.shared.widgets.KidButton
 
 /** [KidButton.onActivate]'s test tag for the New Picture control — see [KidCanvasScreenTest]. */
 const val NEW_PICTURE_TEST_TAG = "new-picture"
+
+/** Brand yellow — see `docs/brand.md`. Used as a highlight on the icon only; the button's own chrome stays neutral gray. */
+private val BrandYellow = Color(0xFFFCD214)
+
+private val NewPictureBackground = Color(0xFFF2F2F2)
+private val NewPicturePressedBackground = Color(0xFFE0E0E0)
+private val NewPictureBorderColor = Color(0xFFBDBDBD)
+private val NewPictureShadowColor = Color.Gray
+
+private val NewPictureShape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
 
 /**
  * The kid canvas's composition root — see the User Experience LLD. Composes
@@ -63,7 +78,7 @@ fun KidCanvasScreen(
 
         // @spec CANVAS-UX-001
         KidButton(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).testTag(NEW_PICTURE_TEST_TAG),
+            modifier = Modifier.align(Alignment.CenterEnd).testTag(NEW_PICTURE_TEST_TAG),
             onPressedChange = { pressed -> newPictureHeld = pressed },
             onActivate = {
                 // Re-affirm the hold immediately: onPressedChange(false) already
@@ -81,7 +96,26 @@ fun KidCanvasScreen(
                 }
             },
         ) { pressed ->
-            Box(Modifier.size(64.dp).background(if (pressed) Color.DarkGray else Color.Gray, CircleShape))
+            Box(
+                modifier = Modifier
+                    .size(width = 64.dp, height = 96.dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = NewPictureShape,
+                        ambientColor = NewPictureShadowColor,
+                        spotColor = NewPictureShadowColor,
+                    )
+                    .background(if (pressed) NewPicturePressedBackground else NewPictureBackground, NewPictureShape)
+                    .border(1.5.dp, NewPictureBorderColor, NewPictureShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    imageVector = Icons.Filled.WbSunny,
+                    contentDescription = "New Picture",
+                    modifier = Modifier.size(40.dp),
+                    colorFilter = ColorFilter.tint(BrandYellow),
+                )
+            }
         }
 
         // @spec CANVAS-UX-004, CANVAS-UX-009, CANVAS-UX-019

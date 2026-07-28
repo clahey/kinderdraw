@@ -24,3 +24,7 @@
 
 - [ ] **CANVAS-WIDGETS-015**: Button shall expose a single hit region resulting in one activation action.
 - [ ] **CANVAS-WIDGETS-016**: Color Picker shall expose one independent hit region per color swatch, each following the same hit-testing and activation rule as Button.
+
+## System Gesture Coexistence
+
+- [A] **CANVAS-WIDGETS-017**: On Android, the system shall register each control's current on-screen hit region as excluded from system edge-gesture navigation, so a touch beginning inside that region is not intercepted as a back-swipe or other left/right-edge system gesture.

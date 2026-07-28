@@ -111,3 +111,4 @@ Feedback belonging to a single control's own activation (a button's press animat
 - Sibling: `docs/intent/kid-canvas/painting-style/painting-style-design.md` — the `ColorSource`/`Distribution` implementations behind today's `StyleSettings` wiring.
 - `docs/intent/config/config-design.md` — UX configuration reactivity, storage shape, and resolved-feature accessors.
 - `docs/intent/image-storage/image-storage-design.md` — saved-drawing write failures.
+- `docs/brand.md` — brand color values used by Widgets controls composed here (e.g. New Picture's icon).
