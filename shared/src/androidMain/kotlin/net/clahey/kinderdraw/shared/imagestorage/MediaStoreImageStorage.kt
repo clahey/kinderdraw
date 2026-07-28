@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 // IMAGES-009, IMAGES-010, IMAGES-011, IMAGES-014, IMAGES-015, IMAGES-016, IMAGES-017
 class MediaStoreImageStorage(private val context: Context) : ImageStorage {
     private val collection: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    private val albumRelativePath = "${Environment.DIRECTORY_PICTURES}/kinderdraw/"
+    private val albumRelativePath = "${Environment.DIRECTORY_PICTURES}/KinderDraw/"
 
     override val entries: Flow<List<SavedDrawingEntry>> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {

@@ -25,7 +25,7 @@
 
 ## Linux Storage Backend
 
-- [ ] **IMAGES-012**: On Linux, the system shall default to storing saved drawings under a dedicated subdirectory of the user's Pictures directory (`~/Pictures/kinderdraw`).
+- [ ] **IMAGES-012**: On Linux, the system shall default to storing saved drawings under a dedicated subdirectory of the user's Pictures directory (`~/Pictures/KinderDraw`).
 - [ ] **IMAGES-013**: On Linux, the system shall allow the storage location to be configured to a location other than the default.
 
 ## Reactivity
