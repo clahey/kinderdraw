@@ -1,4 +1,4 @@
-# High-Level Design: kinderdraw
+# High-Level Design: KinderDraw
 
 ## Problem
 
@@ -47,14 +47,14 @@ Lifecycle actions the toddler can trigger accidentally (starting a new picture, 
 
 - **Toddler usability over platform convention, on the canvas.** Where a choice pits toddler-friendly interaction against a platform's standard UI conventions (click ripple, drag thresholds, dismiss-on-outside-tap), the kid canvas leans toward toddler usability, on every platform. The companion screen leans the opposite way — it follows each platform's native conventions (Material 3 on Android, GTK+ HIG on Linux), since parents benefit from platform familiarity rather than custom affordances.
 - **Reversible actions default to forgiving, not confirmed.** An action the toddler can trigger by accident defaults to a non-blocking, recoverable behavior (auto-save-then-clear) rather than a confirmation prompt, as long as the action is actually recoverable. A genuinely irreversible, high-consequence action would still warrant a different treatment.
-- **Free and open-source.** kinderdraw is free and open-source software — ads are never on the table as a monetization trade-off, even when they'd be the simpler or more conventional build choice. Source is publicly available under an open license.
+- **Free and open-source.** KinderDraw is free and open-source software — ads are never on the table as a monetization trade-off, even when they'd be the simpler or more conventional build choice. Source is publicly available under an open license.
 - **Each platform's companion/shell UI uses that platform's own native toolkit, not a shared cross-platform rendering layer.** Android's companion screen ships Material 3; Linux's ships GTK+. This costs a duplicate implementation per platform instead of one shared codebase — accepted in exchange for that screen feeling native. The kid canvas is a deliberate exception: it's already a custom, non-native-widget UI on every platform by design (see the toddler-usability tenet above), so sharing the logic that turns a touch sequence into a drawing — and its on-screen painting — across platforms via Compose Multiplatform doesn't cost the same native-feel trade-off this tenet protects.
 
 ## System Design
 
 ```mermaid
 graph TD
-    App[kinderdraw APK]
+    App[KinderDraw APK]
     Canvas[Kid Canvas<br/>custom pointer input]
     Companion[Companion App<br/>Material 3]
     Store[Shared local data store<br/>drawings + settings + UX config]
