@@ -43,4 +43,35 @@ class PaintingComposableTest {
         assertFalse(active)
         assertFalse(state.isEmpty())
     }
+
+    // @spec CANVAS-PAINT-001, CANVAS-PAINT-018, CANVAS-PAINT-020
+    @Test
+    fun twoConcurrentTouchesEachDrawTheirOwnStrokeWithOneGestureSpanningBoth() = runComposeUiTest {
+        val state = PaintingState(FakeStyleSettings(brush = FakeBrush()))
+        var active = false
+
+        setContent {
+            Painting(
+                state = state,
+                modifier = Modifier.size(100.dp),
+                onStrokeActiveChange = { active = it },
+            )
+        }
+
+        onRoot().performTouchInput { down(0, Offset(10f, 10f)) }
+        assertTrue(active)
+
+        onRoot().performTouchInput { down(1, Offset(80f, 80f)) }
+        // A second concurrent touch joins the same live gesture rather than
+        // re-triggering onStrokeActiveChange.
+        assertTrue(active)
+
+        onRoot().performTouchInput { up(0) }
+        // The other finger is still down — the gesture isn't over yet.
+        assertTrue(active)
+        assertFalse(state.isEmpty())
+
+        onRoot().performTouchInput { up(1) }
+        assertFalse(active)
+    }
 }
