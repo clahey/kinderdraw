@@ -28,9 +28,9 @@ fun Painting(
         modifier = modifier
             .pointerInput(state) {
                 awaitEachGesture {
-                    // One gesture now spans however many pointers are
+                    // One gesture spans however many pointers are
                     // concurrently down — see the Painting LLD's Composable
-                    // Shape — rather than exactly one.
+                    // Shape.
                     val trackedPointers = mutableSetOf<PointerId>()
                     do {
                         val event = awaitPointerEvent()
