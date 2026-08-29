@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.pointer.PointerId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,8 +17,8 @@ class PaintingStateTest {
     private val p0 = Point(0.1f, 0.1f)
     private val p1 = Point(0.2f, 0.3f)
     private val p2 = Point(0.4f, 0.5f)
-    private val pointerA = "pointer-a"
-    private val pointerB = "pointer-b"
+    private val pointerA = PointerId(0L)
+    private val pointerB = PointerId(1L)
 
     // @spec CANVAS-PAINT-001
     @Test
@@ -109,7 +110,7 @@ class PaintingStateTest {
         val brush = FakeBrush()
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
-        val pointers = (1..12).map { "pointer-$it" }
+        val pointers = (1..12).map { PointerId(it.toLong()) }
 
         pointers.forEach { painting.onPointerDown(it, p0) }
         assertEquals(pointers.size, settings.brushQueryCount)

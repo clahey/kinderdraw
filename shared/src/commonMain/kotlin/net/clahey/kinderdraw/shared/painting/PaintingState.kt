@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
@@ -43,7 +44,7 @@ class PaintingState(
         val savedStrokes = savedState?.getValue("strokes") as List<Map<String, Any?>>?
         savedStrokes?.forEach { add(styleSettings.getActiveBrush().restore(it)) }
     }
-    private val liveStrokes = mutableStateMapOf<Any, Stroke>()
+    private val liveStrokes = mutableStateMapOf<PointerId, Stroke>()
     private var lastRenderSize: Size = Size.Zero
 
     // @spec CANVAS-PAINT-016, CANVAS-PAINT-019
@@ -52,17 +53,17 @@ class PaintingState(
         ?: styleSettings.getActiveBackground().getNextColor()
 
     // @spec CANVAS-PAINT-001, CANVAS-PAINT-002, CANVAS-PAINT-020
-    fun onPointerDown(pointerId: Any, point: Point) {
+    fun onPointerDown(pointerId: PointerId, point: Point) {
         liveStrokes[pointerId] = styleSettings.getActiveBrush().startStroke(point)
     }
 
     // @spec CANVAS-PAINT-020
-    fun onPointerMove(pointerId: Any, point: Point) {
+    fun onPointerMove(pointerId: PointerId, point: Point) {
         liveStrokes[pointerId]?.addPoint(point)
     }
 
     // @spec CANVAS-PAINT-003, CANVAS-PAINT-020
-    fun onPointerUp(pointerId: Any) {
+    fun onPointerUp(pointerId: PointerId) {
         liveStrokes.remove(pointerId)?.let { completedStrokes.add(it) }
     }
 

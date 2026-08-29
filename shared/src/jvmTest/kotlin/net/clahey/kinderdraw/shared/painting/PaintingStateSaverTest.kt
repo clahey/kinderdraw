@@ -3,6 +3,7 @@ package net.clahey.kinderdraw.shared.painting
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.pointer.PointerId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,8 +16,8 @@ private val saverScope = SaverScope { true }
 class PaintingStateSaverTest {
     private val p0 = Point(0.1f, 0.1f)
     private val p1 = Point(0.2f, 0.3f)
-    private val pointerA = "pointer-a"
-    private val pointerB = "pointer-b"
+    private val pointerA = PointerId(0L)
+    private val pointerB = PointerId(1L)
 
     // @spec CANVAS-PAINT-011
     @Test
