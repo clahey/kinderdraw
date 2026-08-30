@@ -437,9 +437,13 @@ class PaintingStateTest {
         val brush = FakeBrush()
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
+        val beforeClearA = Point(0.6f, 0.1f)
+        val beforeClearB = Point(0.7f, 0.2f)
 
         painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, beforeClearA)
         painting.onPointerDown(pointerB, p1)
+        painting.onPointerMove(pointerB, beforeClearB)
         painting.clear()
 
         // Each replacement stroke carries its own interrupted stroke's brush
@@ -452,7 +456,9 @@ class PaintingStateTest {
         painting.onPointerUp(pointerB)
         testDrawScope { with(painting) { render() } }
 
-        // Pointer A continues from p0 (its own last point), pointer B from p1 — never confused.
-        assertEquals(listOf(listOf(p0, p2), listOf(p1)), brush.renderCalls)
+        // Each stroke continues only from its own last pre-clear point
+        // (p0 and p1, the pre-move starting points, are discarded) — never
+        // confused with the other pointer's.
+        assertEquals(listOf(listOf(beforeClearA, p2), listOf(beforeClearB)), brush.renderCalls)
     }
 }
