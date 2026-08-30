@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
@@ -21,11 +23,13 @@ import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
 
 /**
  * A drawing's Compose-observable state — see the Painting LLD's Composable
- * Shape. Holds the completed strokes and any live stroke; a stroke's own
- * captured points are Compose-observable within the stroke implementation
- * itself (see the Painting Style LLD's Decisions & Alternatives). Pointer
- * events are forwarded into this state by the [Painting] composable, which
- * owns the actual pointer input.
+ * Shape. Holds the completed strokes and every currently-live stroke, keyed
+ * by its own originating pointer so several pointers can each hold their own
+ * independent live stroke at once; a stroke's own captured points are
+ * Compose-observable within the stroke implementation itself (see the
+ * Painting Style LLD's Decisions & Alternatives). Pointer events are
+ * forwarded into this state by the [Painting] composable, which owns the
+ * actual pointer input.
  *
  * [savedState] exists only for [paintingStateSaver]'s restore path —
  * ordinary construction leaves it unset, resolving the background from
@@ -40,7 +44,7 @@ class PaintingState(
         val savedStrokes = savedState?.getValue("strokes") as List<Map<String, Any?>>?
         savedStrokes?.forEach { add(styleSettings.getActiveBrush().restore(it)) }
     }
-    private var liveStroke by mutableStateOf<Stroke?>(null)
+    private val liveStrokes = mutableStateMapOf<PointerId, Stroke>()
     private var lastRenderSize: Size = Size.Zero
 
     // @spec CANVAS-PAINT-016, CANVAS-PAINT-019
@@ -48,23 +52,23 @@ class PaintingState(
         ?.let { Color(it.getValue("background") as Int) }
         ?: styleSettings.getActiveBackground().getNextColor()
 
-    // @spec CANVAS-PAINT-001, CANVAS-PAINT-002
-    fun onPointerDown(point: Point) {
-        liveStroke = styleSettings.getActiveBrush().startStroke(point)
+    // @spec CANVAS-PAINT-001, CANVAS-PAINT-002, CANVAS-PAINT-020
+    fun onPointerDown(pointerId: PointerId, point: Point) {
+        liveStrokes[pointerId] = styleSettings.getActiveBrush().startStroke(point)
     }
 
-    fun onPointerMove(point: Point) {
-        liveStroke?.addPoint(point)
+    // @spec CANVAS-PAINT-020
+    fun onPointerMove(pointerId: PointerId, point: Point) {
+        liveStrokes[pointerId]?.addPoint(point)
     }
 
-    // @spec CANVAS-PAINT-003
-    fun onPointerUp() {
-        liveStroke?.let { completedStrokes.add(it) }
-        liveStroke = null
+    // @spec CANVAS-PAINT-003, CANVAS-PAINT-020
+    fun onPointerUp(pointerId: PointerId) {
+        liveStrokes.remove(pointerId)?.let { completedStrokes.add(it) }
     }
 
     // @spec CANVAS-PAINT-008
-    fun isEmpty(): Boolean = completedStrokes.isEmpty() && liveStroke == null
+    fun isEmpty(): Boolean = completedStrokes.isEmpty() && liveStrokes.isEmpty()
 
     // @spec CANVAS-PAINT-009, CANVAS-PAINT-012, CANVAS-PAINT-017
     suspend fun save(imageStorage: ImageStorage, id: String? = null): Result<String> {
@@ -79,9 +83,10 @@ class PaintingState(
 
     // @spec CANVAS-PAINT-010, CANVAS-PAINT-013, CANVAS-PAINT-016
     fun clear() {
-        val interrupted = liveStroke
+        val interrupted = liveStrokes.toMap()
         completedStrokes.clear()
-        liveStroke = interrupted?.restart()
+        liveStrokes.clear()
+        interrupted.forEach { (pointerId, stroke) -> liveStrokes[pointerId] = stroke.restart() }
         background = styleSettings.getActiveBackground().getNextColor()
     }
 
@@ -92,7 +97,9 @@ class PaintingState(
         for (stroke in completedStrokes) {
             with(stroke) { render() }
         }
-        liveStroke?.let { stroke -> with(stroke) { render() } }
+        for (stroke in liveStrokes.values) {
+            with(stroke) { render() }
+        }
     }
 
     /** Rasterizes the drawing off-screen, at the size last seen in [render] — see the Painting LLD's Save and Clear. */
@@ -114,13 +121,13 @@ class PaintingState(
     /**
      * This drawing's state as an opaque, self-describing map — see the
      * Painting LLD's Lifecycle Survival. Every completed stroke is
-     * included, plus the live stroke too if one is in progress, each via
-     * its own [Stroke.save]; passing the result back into the constructor
-     * as [savedState] reconstructs an equivalent [PaintingState].
+     * included, plus every currently-live stroke too, each via its own
+     * [Stroke.save]; passing the result back into the constructor as
+     * [savedState] reconstructs an equivalent [PaintingState].
      */
     fun toSavedState(): Map<String, Any?> = mapOf(
         "background" to background.toArgb(),
-        "strokes" to (completedStrokes + listOfNotNull(liveStroke)).map { it.save() },
+        "strokes" to (completedStrokes + liveStrokes.values).map { it.save() },
     )
 }
 

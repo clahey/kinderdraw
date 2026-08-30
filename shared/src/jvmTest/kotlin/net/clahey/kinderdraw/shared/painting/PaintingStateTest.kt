@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.pointer.PointerId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,6 +17,8 @@ class PaintingStateTest {
     private val p0 = Point(0.1f, 0.1f)
     private val p1 = Point(0.2f, 0.3f)
     private val p2 = Point(0.4f, 0.5f)
+    private val pointerA = PointerId(0L)
+    private val pointerB = PointerId(1L)
 
     // @spec CANVAS-PAINT-001
     @Test
@@ -24,9 +27,9 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerMove(p1)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, p1)
+        painting.onPointerUp(pointerA)
 
         assertEquals(1, settings.brushQueryCount)
     }
@@ -39,14 +42,82 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = originalBrush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
+        painting.onPointerDown(pointerA, p0)
         settings.brush = laterBrush
-        painting.onPointerMove(p1)
-        painting.onPointerUp()
+        painting.onPointerMove(pointerA, p1)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         assertEquals(1, originalBrush.renderCalls.size)
         assertTrue(laterBrush.renderCalls.isEmpty())
+    }
+
+    // @spec CANVAS-PAINT-001, CANVAS-PAINT-020
+    @Test
+    fun aSecondPointersDownStartsItsOwnStrokeWithoutDisturbingTheFirst() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerDown(pointerB, p1)
+
+        assertEquals(2, settings.brushQueryCount)
+        testDrawScope { with(painting) { render() } }
+        // Both pointers are still live; render order between concurrently-live
+        // strokes isn't guaranteed, only that each pointer got its own stroke.
+        assertEquals(setOf(listOf(p0), listOf(p1)), brush.renderCalls.toSet())
+    }
+
+    // @spec CANVAS-PAINT-020
+    @Test
+    fun eachConcurrentPointersMovementOnlyExtendsItsOwnStroke() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerDown(pointerB, p1)
+        painting.onPointerMove(pointerA, p2)
+        testDrawScope { with(painting) { render() } }
+
+        assertEquals(setOf(listOf(p0, p2), listOf(p1)), brush.renderCalls.toSet())
+    }
+
+    // @spec CANVAS-PAINT-020
+    @Test
+    fun oneConcurrentPointersLiftOnlyCompletesItsOwnStrokeLeavingTheOtherLive() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerDown(pointerB, p1)
+        painting.onPointerUp(pointerA)
+
+        assertFalse(painting.isEmpty())
+
+        painting.onPointerMove(pointerB, p2)
+        painting.onPointerUp(pointerB)
+        testDrawScope { with(painting) { render() } }
+
+        assertEquals(listOf(listOf(p0), listOf(p1, p2)), brush.renderCalls)
+    }
+
+    // @spec CANVAS-PAINT-021
+    @Test
+    fun noUpperLimitIsImposedOnConcurrentLiveStrokes() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+        val pointers = (1..12).map { PointerId(it.toLong()) }
+
+        pointers.forEach { painting.onPointerDown(it, p0) }
+        assertEquals(pointers.size, settings.brushQueryCount)
+
+        pointers.forEach { painting.onPointerUp(it) }
+        testDrawScope { with(painting) { render() } }
+        assertEquals(pointers.size, brush.renderCalls.size)
     }
 
     // @spec CANVAS-PAINT-002
@@ -56,8 +127,8 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
 
         assertFalse(painting.isEmpty())
         testDrawScope { with(painting) { render() } }
@@ -71,11 +142,11 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
-        painting.onPointerDown(p1)
-        painting.onPointerMove(p2)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
+        painting.onPointerDown(pointerA, p1)
+        painting.onPointerMove(pointerA, p2)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         assertEquals(listOf(listOf(p0), listOf(p1, p2)), brush.renderCalls)
@@ -88,9 +159,9 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerMove(p1)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, p1)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         assertEquals(listOf(p0, p1), brush.renderCalls.single())
@@ -103,9 +174,9 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
+        painting.onPointerDown(pointerA, p0)
         testDrawScope { with(painting) { render() } }
-        painting.onPointerMove(p1)
+        painting.onPointerMove(pointerA, p1)
         testDrawScope { with(painting) { render() } }
 
         assertEquals(listOf(listOf(p0), listOf(p0, p1)), brush.renderCalls)
@@ -119,8 +190,8 @@ class PaintingStateTest {
 
         assertTrue(painting.isEmpty())
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         assertFalse(painting.isEmpty())
 
         painting.clear()
@@ -134,10 +205,10 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
-        painting.onPointerDown(p1)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
+        painting.onPointerDown(pointerA, p1)
+        painting.onPointerUp(pointerA)
 
         painting.clear()
 
@@ -195,8 +266,8 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope(width = 40, height = 24) { with(painting) { render() } }
 
         val result = painting.save(imageStorage)
@@ -214,8 +285,8 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         // No render() call before save() — the drawing surface's size is unknown.
 
         val result = painting.save(imageStorage)
@@ -231,9 +302,9 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerMove(p1)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, p1)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         painting.save(imageStorage)
@@ -251,8 +322,8 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope(width = 4, height = 4) { with(painting) { render() } }
 
         painting.save(imageStorage)
@@ -270,8 +341,8 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         val result = painting.save(imageStorage)
@@ -288,8 +359,8 @@ class PaintingStateTest {
         val painting = PaintingState(settings)
         val imageStorage = FakeImageStorage()
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         val result = painting.save(imageStorage, id = "existing-id")
@@ -307,8 +378,8 @@ class PaintingStateTest {
         val imageStorage = FakeImageStorage()
         imageStorage.failNextUpdate("no such entry")
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         val result = painting.save(imageStorage, id = "missing-id")
@@ -326,8 +397,8 @@ class PaintingStateTest {
         val imageStorage = FakeImageStorage()
         imageStorage.failNextCreate("disk full")
 
-        painting.onPointerDown(p0)
-        painting.onPointerUp()
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         val result = painting.save(imageStorage)
@@ -343,8 +414,8 @@ class PaintingStateTest {
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
 
-        painting.onPointerDown(p0)
-        painting.onPointerMove(p1)
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, p1)
         painting.clear()
 
         // The replacement stroke carries the interrupted stroke's own brush
@@ -352,11 +423,42 @@ class PaintingStateTest {
         assertEquals(1, settings.brushQueryCount)
         assertFalse(painting.isEmpty())
 
-        painting.onPointerMove(p2)
-        painting.onPointerUp()
+        painting.onPointerMove(pointerA, p2)
+        painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
         // Continues from the interrupted stroke's last point (p1), not p0 or a fresh start.
         assertEquals(listOf(listOf(p1, p2)), brush.renderCalls)
+    }
+
+    // @spec CANVAS-PAINT-013
+    @Test
+    fun clearWhileTwoStrokesAreLiveFinalizesAndReplacesEachIndependently() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+        val beforeClearA = Point(0.6f, 0.1f)
+        val beforeClearB = Point(0.7f, 0.2f)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerMove(pointerA, beforeClearA)
+        painting.onPointerDown(pointerB, p1)
+        painting.onPointerMove(pointerB, beforeClearB)
+        painting.clear()
+
+        // Each replacement stroke carries its own interrupted stroke's brush
+        // forward rather than asking Active Stroke Settings again.
+        assertEquals(2, settings.brushQueryCount)
+        assertFalse(painting.isEmpty())
+
+        painting.onPointerMove(pointerA, p2)
+        painting.onPointerUp(pointerA)
+        painting.onPointerUp(pointerB)
+        testDrawScope { with(painting) { render() } }
+
+        // Each stroke continues only from its own last pre-clear point
+        // (p0 and p1, the pre-move starting points, are discarded) — never
+        // confused with the other pointer's.
+        assertEquals(listOf(listOf(beforeClearA, p2), listOf(beforeClearB)), brush.renderCalls)
     }
 }
