@@ -3,6 +3,7 @@ package net.clahey.kinderdraw.shared.painting
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.pointer.PointerId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,6 +16,8 @@ private val saverScope = SaverScope { true }
 class PaintingStateSaverTest {
     private val p0 = Point(0.1f, 0.1f)
     private val p1 = Point(0.2f, 0.3f)
+    private val pointerA = PointerId(0L)
+    private val pointerB = PointerId(1L)
 
     // @spec CANVAS-PAINT-011
     @Test
@@ -22,10 +25,10 @@ class PaintingStateSaverTest {
         val brush = FakeBrush()
         val settings = FakeStyleSettings(brush = brush)
         val original = PaintingState(settings)
-        original.onPointerDown(p0)
-        original.onPointerUp()
-        original.onPointerDown(p1)
-        original.onPointerUp()
+        original.onPointerDown(pointerA, p0)
+        original.onPointerUp(pointerA)
+        original.onPointerDown(pointerA, p1)
+        original.onPointerUp(pointerA)
         val saver = paintingStateSaver(settings)
 
         val saved = with(saver) { saverScope.save(original) }!!
@@ -41,8 +44,8 @@ class PaintingStateSaverTest {
         val brush = FakeBrush()
         val settings = FakeStyleSettings(brush = brush)
         val original = PaintingState(settings)
-        original.onPointerDown(p0)
-        original.onPointerMove(p1)
+        original.onPointerDown(pointerA, p0)
+        original.onPointerMove(pointerA, p1)
         // Pointer never lifts - still live when persistence runs.
         val saver = paintingStateSaver(settings)
 
@@ -52,6 +55,27 @@ class PaintingStateSaverTest {
         assertFalse(restored.isEmpty())
         testDrawScope { with(restored) { render() } }
         assertEquals(listOf(listOf(p0, p1)), brush.renderCalls)
+    }
+
+    // @spec CANVAS-PAINT-011
+    @Test
+    fun restoredStateFinalizesEveryConcurrentlyLiveStrokeIndependentlyWithoutStartingReplacements() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val original = PaintingState(settings)
+        original.onPointerDown(pointerA, p0)
+        original.onPointerDown(pointerB, p1)
+        // Neither pointer lifts - both still live when persistence runs.
+        val saver = paintingStateSaver(settings)
+
+        val saved = with(saver) { saverScope.save(original) }!!
+        val restored = saver.restore(saved)!!
+
+        assertFalse(restored.isEmpty())
+        testDrawScope { with(restored) { render() } }
+        // Render order between the two restored strokes isn't guaranteed,
+        // only that each pointer's own points were preserved independently.
+        assertEquals(setOf(listOf(p0), listOf(p1)), brush.renderCalls.toSet())
     }
 
     // @spec CANVAS-PAINT-019
