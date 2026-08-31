@@ -16,7 +16,7 @@ class PressState(
     private var enteredAt: Long = 0
     private var exitedAt: Long? = null
 
-    // @spec CANVAS-WIDGETS-001, CANVAS-WIDGETS-004, CANVAS-WIDGETS-010
+    // @spec CANVAS-WIDGETS-001, CANVAS-WIDGETS-004
     fun onClaim(now: Long) {
         enteredAt = now
         exitedAt = null
@@ -36,7 +36,7 @@ class PressState(
         }
     }
 
-    // @spec CANVAS-WIDGETS-005, CANVAS-WIDGETS-006, CANVAS-WIDGETS-007, CANVAS-WIDGETS-011, CANVAS-WIDGETS-012, CANVAS-WIDGETS-013
+    // @spec CANVAS-WIDGETS-005, CANVAS-WIDGETS-006, CANVAS-WIDGETS-007, CANVAS-WIDGETS-012, CANVAS-WIDGETS-013, CANVAS-WIDGETS-026
     fun onRelease(now: Long) {
         val lastExitedAt = exitedAt
         val activates = if (lastExitedAt == null) {

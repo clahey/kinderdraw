@@ -10,57 +10,77 @@ import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.toSize
 import net.clahey.kinderdraw.shared.paintingstyle.toPoint
+import net.clahey.kinderdraw.shared.userexperience.InteractionLock
+import net.clahey.kinderdraw.shared.userexperience.swallowGesture
 
 /**
  * Owns pointer input for a drawing — see the Painting LLD's Composable
- * Shape. Converts whatever pointer stream Compose delivers to it into
- * calls against [state]; reports whether it's currently holding any live
- * stroke via [onStrokeActiveChange], mirroring the Widgets LLD's
- * `onPressedChange` (see the Painting LLD's Reporting Stroke State).
+ * Shape. Converts whatever pointer stream Compose delivers to it into calls
+ * against [state]. It takes [lock] for the span of its own gesture and
+ * observes nothing else about the screen: a refusal means some other
+ * component is mid-gesture, and Painting simply starts nothing (see the
+ * Painting LLD's Holding the Interaction).
  */
 @Composable
 fun Painting(
     state: PaintingState,
+    lock: InteractionLock,
     modifier: Modifier = Modifier,
-    onStrokeActiveChange: (Boolean) -> Unit = {},
 ) {
     Canvas(
         modifier = modifier
-            .pointerInput(state) {
+            .pointerInput(state, lock) {
                 awaitEachGesture {
                     // One gesture spans however many pointers are
                     // concurrently down — see the Painting LLD's Composable
-                    // Shape.
+                    // Shape — and one hold covers all of it.
                     val trackedPointers = mutableSetOf<PointerId>()
-                    do {
-                        val event = awaitPointerEvent()
-                        val down = mutableListOf<PointerId>()
-                        val up = mutableListOf<PointerId>()
-                        for (change in event.changes) {
-                            when {
-                                change.changedToDownIgnoreConsumed() -> {
-                                    change.consume()
-                                    down += change.id
-                                    state.onPointerDown(change.id, change.position.toPoint(size.toSize()))
-                                }
-                                change.changedToUpIgnoreConsumed() -> {
-                                    change.consume()
-                                    up += change.id
-                                    state.onPointerUp(change.id)
-                                }
-                                else -> {
-                                    change.consume()
-                                    state.onPointerMove(change.id, change.position.toPoint(size.toSize()))
+                    var hold: InteractionLock.Hold? = null
+                    try {
+                        do {
+                            val event = awaitPointerEvent()
+                            // Only a touch-down starts a gesture worth asking
+                            // about: a hovering pointer must never take the
+                            // interaction, and a pointer joining a gesture
+                            // already held needs no second request.
+                            // @spec CANVAS-PAINT-018, CANVAS-PAINT-022
+                            if (hold == null && event.changes.any { it.changedToDownIgnoreConsumed() }) {
+                                hold = lock.tryAcquire()
+                                if (hold == null) {
+                                    event.changes.forEach { it.consume() }
+                                    swallowGesture()
+                                    return@awaitEachGesture
                                 }
                             }
-                        }
-                        // @spec CANVAS-PAINT-018
-                        when (applyGestureChanges(trackedPointers, down, up)) {
-                            GestureEdge.STARTED -> onStrokeActiveChange(true)
-                            GestureEdge.ENDED -> onStrokeActiveChange(false)
-                            GestureEdge.UNCHANGED -> {}
-                        }
-                    } while (trackedPointers.isNotEmpty())
+                            val down = mutableListOf<PointerId>()
+                            val up = mutableListOf<PointerId>()
+                            for (change in event.changes) {
+                                when {
+                                    change.changedToDownIgnoreConsumed() -> {
+                                        change.consume()
+                                        down += change.id
+                                        state.onPointerDown(change.id, change.position.toPoint(size.toSize()))
+                                    }
+                                    change.changedToUpIgnoreConsumed() -> {
+                                        change.consume()
+                                        up += change.id
+                                        state.onPointerUp(change.id)
+                                    }
+                                    // A pointer that isn't pressed and didn't
+                                    // just lift is hovering — not a stroke,
+                                    // and not ours to consume.
+                                    !change.pressed -> Unit
+                                    else -> {
+                                        change.consume()
+                                        state.onPointerMove(change.id, change.position.toPoint(size.toSize()))
+                                    }
+                                }
+                            }
+                        } while (applyGestureChanges(trackedPointers, down, up))
+                    } finally {
+                        // @spec CANVAS-PAINT-023
+                        hold?.release()
+                    }
                 }
             },
     ) {

@@ -13,7 +13,7 @@ private class RecordingCallbacks {
 }
 
 class PressStateTest {
-    // @spec CANVAS-WIDGETS-001, CANVAS-WIDGETS-004, CANVAS-WIDGETS-010
+    // @spec CANVAS-WIDGETS-001, CANVAS-WIDGETS-004
     @Test
     fun claimFiresPressedChangeTrueImmediately() {
         val callbacks = RecordingCallbacks()
@@ -93,7 +93,7 @@ class PressStateTest {
         assertEquals(1, callbacks.activateCount)
     }
 
-    // @spec CANVAS-WIDGETS-011
+    // @spec CANVAS-WIDGETS-026
     @Test
     fun pressedChangeFalseFiresOnReleaseRegardlessOfActivation() {
         val activating = RecordingCallbacks()

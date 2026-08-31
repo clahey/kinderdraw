@@ -2,6 +2,7 @@ package net.clahey.kinderdraw.shared.userexperience
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -37,14 +38,15 @@ private class GatedImageStorage(private val delegate: FakeImageStorage) : ImageS
 @OptIn(ExperimentalTestApi::class)
 class KidCanvasScreenTest {
     private val p0 = Point(0.1f, 0.1f)
+    private val pointerA = PointerId(0L)
 
     // @spec CANVAS-UX-001, CANVAS-UX-002, CANVAS-UX-009, CANVAS-UX-010, CANVAS-UX-011, CANVAS-UX-013
     @Test
     fun newPictureSavesThenClearsWhenTheDrawingIsNotEmpty() = runComposeUiTest {
         val settings = FakeStyleSettings(brush = FakeBrush())
         val state = PaintingState(settings)
-        state.onPointerDown(p0)
-        state.onPointerUp()
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
         val imageStorage = FakeImageStorage()
 
         setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
@@ -90,7 +92,38 @@ class KidCanvasScreenTest {
         waitForIdle()
 
         assertTrue(imageStorage.createCalls.isEmpty()) // New Picture never activated
-        assertFalse(state.isEmpty()) // the stroke itself completed, untouched by the blocked tap
+        assertFalse(state.isEmpty()) // the stroke itself completed, untouched by the refused tap
+    }
+
+    // @spec CANVAS-UX-005
+    @Test
+    fun aFingerHeldThroughTheNewPictureSequenceStaysInertAfterItCompletes() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = GatedImageStorage(FakeImageStorage())
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        waitUntil { imageStorage.createStarted.isCompleted }
+
+        // A finger lands on the canvas mid-sequence and stays down throughout.
+        onRoot().performTouchInput { down(1, Offset(5f, 5f)) }
+        imageStorage.release()
+        waitForIdle()
+        assertTrue(state.isEmpty()) // the sequence finished and cleared
+
+        // That same finger, still down, must not spring into a stroke now
+        // that the hold is gone — only a fresh touch-down is eligible.
+        onRoot().performTouchInput { moveTo(1, Offset(20f, 20f)) }
+        assertTrue(state.isEmpty())
+
+        onRoot().performTouchInput { up(1) }
+        onRoot().performTouchInput { down(2, Offset(30f, 30f)) }
+        assertFalse(state.isEmpty())
     }
 
     // @spec CANVAS-UX-004, CANVAS-UX-009, CANVAS-UX-019
@@ -98,8 +131,8 @@ class KidCanvasScreenTest {
     fun newPictureSequenceBlocksNewStrokesOnPaintingUntilItCompletes() = runComposeUiTest {
         val settings = FakeStyleSettings(brush = FakeBrush())
         val state = PaintingState(settings)
-        state.onPointerDown(p0)
-        state.onPointerUp()
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
         val queryCountBeforeAttempt = settings.brushQueryCount
         val imageStorage = GatedImageStorage(FakeImageStorage())
 
