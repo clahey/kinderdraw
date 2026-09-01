@@ -1,5 +1,9 @@
 package net.clahey.kinderdraw.shared.userexperience
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerId
@@ -93,6 +97,32 @@ class KidCanvasScreenTest {
 
         assertTrue(imageStorage.createCalls.isEmpty()) // New Picture never activated
         assertFalse(state.isEmpty()) // the stroke itself completed, untouched by the refused tap
+    }
+
+    // @spec CANVAS-UX-024
+    @Test
+    fun aRecreatedScreenStartsWithTheInteractionUnheld() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        val imageStorage = FakeImageStorage()
+        var generation by mutableStateOf(0)
+
+        setContent {
+            // A changing key rebuilds the screen the way an OS-driven
+            // recreation does, discarding everything it held in `remember`.
+            key(generation) { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        }
+
+        // Leave a stroke live, so the old screen's lock was held when it went away.
+        onRoot().performTouchInput { down(0, Offset(5f, 5f)) }
+        generation = 1
+        waitForIdle()
+
+        // The rebuilt screen accepts a fresh touch, which it could not do if a
+        // hold had survived with nothing left alive to release it.
+        onRoot().performTouchInput { down(1, Offset(20f, 20f)); up(1) }
+        waitForIdle()
+        assertFalse(state.isEmpty())
     }
 
     // @spec CANVAS-UX-005

@@ -124,6 +124,21 @@ class PressStateTest {
         assertEquals(1, callbacks.activateCount)
     }
 
+    // @spec CANVAS-WIDGETS-026, CANVAS-WIDGETS-027
+    @Test
+    fun cancelEndsThePressWithoutActivating() {
+        val callbacks = RecordingCallbacks()
+        val state = PressState(callbacks.onPressedChange, callbacks.onActivate)
+
+        // A press that would unambiguously activate had it been released.
+        state.onClaim(now = 0)
+        state.onPositionChanged(insideRegion = true, now = 200)
+        state.onCancel()
+
+        assertEquals(0, callbacks.activateCount)
+        assertEquals(listOf(true, false), callbacks.pressedChanges)
+    }
+
     // @spec CANVAS-WIDGETS-014
     @Test
     fun independentInstancesNeverInterfereWithEachOther() {

@@ -27,7 +27,7 @@ private const val BUTTON_TAG = "kid-button"
 
 @OptIn(ExperimentalTestApi::class)
 class KidButtonTest {
-    // @spec CANVAS-WIDGETS-018, CANVAS-WIDGETS-019
+    // @spec CANVAS-WIDGETS-018, CANVAS-WIDGETS-019, CANVAS-WIDGETS-023
     @Test
     fun aRefusedPressNeitherActivatesNorShowsFeedback() = runComposeUiTest {
         val lock = InteractionLock()
@@ -82,7 +82,7 @@ class KidButtonTest {
         assertNotNull(lock.tryAcquire())
     }
 
-    // @spec CANVAS-WIDGETS-022
+    // @spec CANVAS-WIDGETS-022, CANVAS-WIDGETS-024
     @Test
     fun keepsTheHoldUntilASuspendingActivationCompletes() = runComposeUiTest {
         val lock = InteractionLock()
@@ -145,6 +145,32 @@ class KidButtonTest {
         waitForIdle()
 
         assertNotNull(lock.tryAcquire(), "an activation that never completed must not strand the interaction")
+    }
+
+    // @spec CANVAS-WIDGETS-025
+    @Test
+    fun releasesTheHoldWhenItsOwnGestureIsCancelledMidPress() = runComposeUiTest {
+        val lock = InteractionLock()
+        var shown by mutableStateOf(true)
+
+        setContent {
+            if (shown) {
+                KidButton(onActivate = {}, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+            }
+        }
+        val center = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot.center
+
+        // Pointer stays down — the press is still live, and the hold with it.
+        onRoot().performTouchInput { down(center) }
+        assertNull(lock.tryAcquire())
+
+        // Leaving composition cancels the gesture before any release.
+        shown = false
+        waitForIdle()
+
+        assertNotNull(lock.tryAcquire(), "a cancelled press must not strand the interaction")
     }
 
     // @spec CANVAS-WIDGETS-020

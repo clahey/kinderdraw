@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -82,7 +83,17 @@ fun KidButton(
                             // @spec CANVAS-WIDGETS-020
                             val change = event.changes.firstOrNull { it.id == down.id } ?: continue
                             if (!change.pressed) {
-                                pressState.onRelease(now = change.uptimeMillis)
+                                // Compose signals a cancelled gesture by
+                                // delivering the change already consumed, which
+                                // is what `changedToUp` excludes. By timing
+                                // alone the two are identical, so the activation
+                                // rule only ever sees a genuine lift.
+                                // @spec CANVAS-WIDGETS-027
+                                if (change.changedToUp()) {
+                                    pressState.onRelease(now = change.uptimeMillis)
+                                } else {
+                                    pressState.onCancel()
+                                }
                                 break
                             }
                             pressState.onPositionChanged(bounds.contains(change.position), now = change.uptimeMillis)
@@ -93,13 +104,13 @@ fun KidButton(
                         // @spec CANVAS-WIDGETS-022, CANVAS-WIDGETS-024
                         if (activated) {
                             releaseOnExit = false
-                            scope.launch {
-                                try {
-                                    currentOnActivate()
-                                } finally {
-                                    hold.release()
-                                }
-                            }
+                            // Released from the job's completion rather than
+                            // from inside it: a coroutine whose scope is
+                            // already cancelled never runs its body at all,
+                            // and a `finally` in a body that never ran would
+                            // strand the interaction.
+                            scope.launch { currentOnActivate() }
+                                .invokeOnCompletion { hold.release() }
                         }
                     } finally {
                         // @spec CANVAS-WIDGETS-021, CANVAS-WIDGETS-025

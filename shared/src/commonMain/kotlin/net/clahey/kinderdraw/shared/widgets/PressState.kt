@@ -36,6 +36,17 @@ class PressState(
         }
     }
 
+    /**
+     * Ends the press without judging activation — the third way a press can
+     * end (see the Widgets LLD's Hit-Testing and Activation). A cancelled
+     * press is indistinguishable from a deliberate one by timing alone, so it
+     * never reaches [onRelease]'s rule.
+     */
+    // @spec CANVAS-WIDGETS-026, CANVAS-WIDGETS-027
+    fun onCancel() {
+        onPressedChange(false)
+    }
+
     // @spec CANVAS-WIDGETS-005, CANVAS-WIDGETS-006, CANVAS-WIDGETS-007, CANVAS-WIDGETS-012, CANVAS-WIDGETS-013, CANVAS-WIDGETS-026
     fun onRelease(now: Long) {
         val lastExitedAt = exitedAt
