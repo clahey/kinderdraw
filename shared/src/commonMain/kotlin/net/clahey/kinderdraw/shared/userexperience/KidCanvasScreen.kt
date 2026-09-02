@@ -72,12 +72,24 @@ fun KidCanvasScreen(
             modifier = Modifier.align(Alignment.CenterEnd).testTag(NEW_PICTURE_TEST_TAG),
             lock = lock,
             onActivate = {
-                // @spec CANVAS-UX-010, CANVAS-UX-011, CANVAS-UX-012
-                if (!state.isEmpty()) {
-                    state.save(imageStorage)
+                // @spec CANVAS-UX-010, CANVAS-UX-012
+                if (state.isEmpty()) {
+                    // @spec CANVAS-UX-013
+                    state.clear()
+                } else {
+                    // Retrying a failed save can't duplicate the drawing: a
+                    // failed create leaves no entry behind (see IMAGES-019).
+                    // @spec CANVAS-UX-011, CANVAS-UX-028
+                    val saved = if (state.save(imageStorage).isSuccess) {
+                        true
+                    } else {
+                        state.save(imageStorage).isSuccess
+                    }
+                    // A drawing that couldn't be saved stays on the canvas —
+                    // clearing it would destroy the only copy.
+                    // @spec CANVAS-UX-013, CANVAS-UX-029
+                    if (saved) state.clear()
                 }
-                // @spec CANVAS-UX-013
-                state.clear()
             },
         ) { pressed ->
             Box(

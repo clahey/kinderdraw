@@ -27,11 +27,13 @@
 ## Lifecycle Behavior — New Picture
 
 - [x] **CANVAS-UX-009**: When New Picture's pointer is claimed, the system shall hold the interaction from that moment through that same pointer's release, so no other control-press or stroke can start during the press itself — regardless of whether the release goes on to activate New Picture.
-- [x] **CANVAS-UX-019**: When New Picture activates, the system shall run the sequence below as that activation's own work, under the hold its press already took, keeping that hold until the sequence completes rather than releasing it at the press's own release.
+- [x] **CANVAS-UX-019**: When New Picture activates, the system shall run the sequence below as that activation's own work, under the hold its press already took, keeping that hold until the sequence ends — whether it ran through to the clear or stopped early at a failed save — rather than releasing it at the press's own release.
 - [x] **CANVAS-UX-010**: When the New Picture sequence runs, the system shall first ask Painting whether the current drawing is empty.
 - [x] **CANVAS-UX-011**: When the New Picture sequence's emptiness check reports the drawing is not empty, the system shall call Painting's save operation with no id, so Image Storage creates a new entry, before clearing.
 - [x] **CANVAS-UX-012**: When the New Picture sequence's emptiness check reports the drawing is empty, the system shall skip the save call entirely, writing nothing to Image Storage.
-- [x] **CANVAS-UX-013**: When the New Picture sequence reaches its final step, the system shall clear Painting's canvas, regardless of whether a save was performed.
+- [x] **CANVAS-UX-013**: When the New Picture sequence reaches its final step, the system shall clear Painting's canvas, including when the emptiness check skipped the save entirely — a sequence with nothing to write still clears. A sequence ended early by a failed save never reaches this step (see CANVAS-UX-029).
+- [x] **CANVAS-UX-028**: When the New Picture sequence's save call reports a failure, the system shall call Painting's save operation exactly once more, immediately and with no intervening delay.
+- [x] **CANVAS-UX-029**: When the New Picture sequence's retried save also reports a failure, the system shall end the sequence there without clearing Painting's canvas, leaving the current drawing exactly as it stood.
 - [ ] **CANVAS-UX-014**: The system shall show no confirmation dialog or intermediate state for the New Picture sequence — the toddler can resume drawing immediately once it completes.
 - [x] **CANVAS-UX-025**: When an OS-driven recreation cancels a New Picture sequence before it completes, the system shall leave the current drawing in place on the restored screen and resume no part of that sequence. Verified by inspection rather than by test — see the LLD's Open Questions.
 

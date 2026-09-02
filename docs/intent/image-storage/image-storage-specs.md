@@ -22,6 +22,7 @@
 
 - [A] **IMAGES-010**: On Android, the system shall persist saved-drawing entries via the device's shared MediaStore, in a dedicated album distinct from the general camera roll, making them visible in the Photos/Gallery app.
 - [A] **IMAGES-011**: On Android, the system shall store a saved-drawing entry's creation timestamp in its MediaStore entry's `DATE_TAKEN` metadata field.
+- [A] **IMAGES-018**: On Android, when determining which MediaStore entries belong to the app's album, the system shall compare album paths case-insensitively, so that every entry in the album directory is listed regardless of the casing its own MediaStore record spells that path with.
 
 ## Linux Storage Backend
 
@@ -36,4 +37,5 @@
 ## Write Failures
 
 - [A] **IMAGES-016**: If a create, update, or delete operation fails (e.g. storage full, I/O error), then the system shall report the failure to the caller rather than crashing.
+- [A] **IMAGES-019**: If a create operation fails after the entry has been brought into existence but before its image has been written completely, then the system shall remove that entry before reporting the failure, so that a create reported as failed leaves no entry any later list or read can observe.
 - [A] **IMAGES-017**: If the read, update, or delete operation is called with an identifier that has no corresponding entry, then the system shall report the failure to the caller.

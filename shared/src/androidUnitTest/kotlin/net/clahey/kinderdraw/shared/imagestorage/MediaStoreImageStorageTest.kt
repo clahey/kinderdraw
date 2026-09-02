@@ -1,6 +1,9 @@
 package net.clahey.kinderdraw.shared.imagestorage
 
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
+import android.os.Environment
 import android.os.Looper
 import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
@@ -150,6 +153,38 @@ class MediaStoreImageStorageTest {
         subscription.cancel()
 
         assertEquals(2, emissions.size)
+    }
+
+    // @spec IMAGES-018
+    @Test
+    fun entriesListsTheAlbumWhateverCasingItsRecordSpellsThePathWith() = runBlocking {
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "differently-cased.png")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/kinderdraw/")
+            put(MediaStore.Images.Media.DATE_TAKEN, 1_000L)
+        }
+        val uri = context.contentResolver
+            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)!!
+
+        val list = storage.entries.first()
+
+        assertEquals(listOf(ContentUris.parseId(uri).toString()), list.map { it.id })
+    }
+
+    // @spec IMAGES-019
+    @Test
+    fun aCreateThatFailsWhileWritingLeavesNoEntryBehind() = runBlocking {
+        // A recycled bitmap inserts fine but cannot be compressed into the
+        // entry, so the failure lands between create's two steps — exactly
+        // where a disk filling up during the image write would land.
+        val image = ImageBitmap(4, 4)
+        image.asAndroidBitmap().recycle()
+
+        val result = storage.create(image)
+
+        assertTrue(result.isFailure)
+        assertEquals(emptyList(), storage.entries.first())
     }
 
     // @spec IMAGES-009

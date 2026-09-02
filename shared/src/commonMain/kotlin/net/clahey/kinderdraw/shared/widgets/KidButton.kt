@@ -19,7 +19,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.launch
 import net.clahey.kinderdraw.shared.userexperience.InteractionLock
 import net.clahey.kinderdraw.shared.userexperience.swallowGesture
 
@@ -75,6 +74,7 @@ fun KidButton(
                         onActivate = { activated = true },
                     )
                     var releaseOnExit = true
+                    var pressEnded = false
                     try {
                         val bounds = Rect(Offset.Zero, size.toSize())
                         pressState.onClaim(now = down.uptimeMillis)
@@ -82,6 +82,12 @@ fun KidButton(
                             val event = awaitPointerEvent()
                             // @spec CANVAS-WIDGETS-020
                             val change = event.changes.firstOrNull { it.id == down.id } ?: continue
+                            // The release carries its own position, which can
+                            // differ from the last move's: a finger that
+                            // drifted off and came back lifts inside without
+                            // any move event ever having said so.
+                            // @spec CANVAS-WIDGETS-005
+                            pressState.onPositionChanged(bounds.contains(change.position), now = change.uptimeMillis)
                             if (!change.pressed) {
                                 // Compose signals a cancelled gesture by
                                 // delivering the change already consumed, which
@@ -94,9 +100,9 @@ fun KidButton(
                                 } else {
                                     pressState.onCancel()
                                 }
+                                pressEnded = true
                                 break
                             }
-                            pressState.onPositionChanged(bounds.contains(change.position), now = change.uptimeMillis)
                         }
                         // The activation runs in the composition's scope, not
                         // this pointer-event one, and keeps the interaction
@@ -115,6 +121,11 @@ fun KidButton(
                     } finally {
                         // @spec CANVAS-WIDGETS-021, CANVAS-WIDGETS-025
                         if (releaseOnExit) hold.release()
+                        // A pointer input reset unwinds this loop without ever
+                        // delivering an ending event, and leaves the control
+                        // composed — so nothing else would clear the feedback.
+                        // @spec CANVAS-WIDGETS-026
+                        if (!pressEnded) pressState.onCancel()
                     }
                 }
             },

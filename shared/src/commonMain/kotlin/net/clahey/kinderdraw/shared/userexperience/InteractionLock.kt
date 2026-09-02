@@ -40,9 +40,11 @@ class InteractionLock {
 }
 
 /**
- * Consumes the rest of the current gesture, returning once every pointer
- * this component is tracking has lifted — what a component owes after the
- * lock refuses it (see the User Experience LLD's Input Arbitration).
+ * Consumes events until no pointer is pressed anywhere on this component —
+ * what a component owes after the lock refuses it (see the User Experience
+ * LLD's Input Arbitration). The refusal covers the whole gesture, so a
+ * pointer resting on the component extends the swallow for as long as it
+ * stays down, whether or not it belongs to the refused press.
  */
 // @spec CANVAS-UX-005
 suspend fun AwaitPointerEventScope.swallowGesture() {

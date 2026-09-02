@@ -173,6 +173,60 @@ class KidButtonTest {
         assertNotNull(lock.tryAcquire(), "a cancelled press must not strand the interaction")
     }
 
+    // @spec CANVAS-WIDGETS-026
+    @Test
+    fun clearsPressFeedbackWhenItsPointerInputIsResetMidPress() = runComposeUiTest {
+        var lock by mutableStateOf(InteractionLock())
+        val pressedStates = mutableListOf<Boolean>()
+
+        setContent {
+            KidButton(onActivate = {}, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) { pressed ->
+                pressedStates.add(pressed)
+                Box(Modifier.size(64.dp))
+            }
+        }
+        val center = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot.center
+
+        onRoot().performTouchInput { down(center) }
+        waitForIdle()
+        assertTrue(pressedStates.last(), "a claimed pointer shows press feedback")
+
+        // A fresh lock instance re-keys `pointerInput`, resetting it under a
+        // control that stays on screen — the cancellation a control outlives,
+        // where nothing else clears the feedback on its way out.
+        lock = InteractionLock()
+        waitForIdle()
+
+        assertFalse(pressedStates.last(), "a cancelled press must not stay lit")
+    }
+
+    // @spec CANVAS-WIDGETS-005
+    @Test
+    fun activatesWhenThePointerLiftsInsideAfterStrayingOutsideEarlier() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) {
+                Box(Modifier.size(64.dp))
+            }
+        }
+        val bounds = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        onRoot().performTouchInput { down(0, bounds.center) }
+        // Strays outside and stays there far longer than the tolerance allows...
+        onRoot().performTouchInput { moveTo(0, Offset(bounds.right + 200f, bounds.center.y)) }
+        // ...then returns and lifts inside. `updatePointerTo` repositions the
+        // pointer without emitting a move of its own, so the return is carried
+        // by the up event itself — where a real finger's last position lives.
+        // The wait has to share this block with the up it delays; on its own it
+        // applies to no event and the stray never grows.
+        onRoot().performTouchInput { advanceEventTime(500); updatePointerTo(0, bounds.center); up(0) }
+        waitForIdle()
+
+        assertEquals(1, activations, "a pointer that lifts inside activates, whatever it did beforehand")
+    }
+
     // @spec CANVAS-WIDGETS-020
     @Test
     fun ignoresASecondPointerArrivingWhileItHoldsTheInteraction() = runComposeUiTest {

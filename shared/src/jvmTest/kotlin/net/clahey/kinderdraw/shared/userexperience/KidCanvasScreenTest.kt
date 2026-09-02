@@ -156,6 +156,68 @@ class KidCanvasScreenTest {
         assertFalse(state.isEmpty())
     }
 
+    // @spec CANVAS-UX-028
+    @Test
+    fun aFailedSaveIsRetriedExactlyOnce() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreates(count = 2, message = "disk full")
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        waitForIdle()
+
+        assertEquals(2, imageStorage.createCalls.size, "one attempt plus exactly one retry")
+    }
+
+    // @spec CANVAS-UX-028, CANVAS-UX-013
+    @Test
+    fun aRetryThatSucceedsSavesAndClears() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreates(count = 1, message = "transient I/O error")
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        waitForIdle()
+
+        assertEquals(2, imageStorage.createCalls.size)
+        assertTrue(state.isEmpty(), "a save that succeeded on the retry still clears")
+    }
+
+    // @spec CANVAS-UX-029, CANVAS-UX-019
+    @Test
+    fun aDrawingThatCouldNotBeSavedIsLeftOnTheCanvas() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        // Enough failures to cover both presses below, so neither can save.
+        imageStorage.failNextCreates(count = 4, message = "disk full")
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        waitForIdle()
+
+        assertFalse(state.isEmpty(), "an unsaved drawing must survive the sequence that couldn't save it")
+
+        // The hold ends with the sequence however it ended, so the control is
+        // usable again — a second press runs the whole sequence over.
+        onRoot().performTouchInput { down(1, buttonCenter); up(1) }
+        waitForIdle()
+        assertEquals(4, imageStorage.createCalls.size)
+    }
+
     // @spec CANVAS-UX-004, CANVAS-UX-009, CANVAS-UX-019
     @Test
     fun newPictureSequenceBlocksNewStrokesOnPaintingUntilItCompletes() = runComposeUiTest {
