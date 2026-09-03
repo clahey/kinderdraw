@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The themed-icon layer (Android 13+), which the system tints as a flat
+  silhouette — so the colour shift that carries the full-colour icon is absent
+  here by necessity, and the mark has to hold up as one shape. Geometry is
+  identical to ic_launcher_foreground; only the paint differs, and the two
+  halves are a single path since nothing needs to cross over anything.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M30,60 C24,40 42,26 58,30 C74,34 82,52 70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
+        android:strokeColor="#000000"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M66.5,78 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0" />
+</vector>

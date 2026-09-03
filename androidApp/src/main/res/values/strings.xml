@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown under the launcher icon, and matches the Play listing title.
+         MixedCase is the display form; the repository, package, and
+         applicationId stay lowercase. -->
+    <string name="app_name">KinderDraw</string>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Editable master for the Play Console's 512x512 high-res store icon.
+
+  viewBox matches the adaptive-icon canvas (108x108) so this stays geometrically
+  identical to androidApp/src/main/res/drawable/ic_launcher_foreground.xml and
+  ic_launcher_background.xml — edit both together.
+
+  Draw order is load-bearing: the green half is second so that it passes over
+  the blue where the line crosses itself.
+
+  Full-bleed square with no rounding and no transparency: Play applies its own
+  corner masking, and rejects an alpha channel in this asset.
+
+  Colours are the brand palette — see docs/brand.md.
+
+  Export:
+    rsvg-convert -w 512 -h 512 icon-512.svg -o icon-512.png
+    magick icon-512.png -alpha remove -alpha off -define png:color-type=6 icon-512.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512" height="512"
+     viewBox="0 0 108 108">
+
+  <rect x="0" y="0" width="108" height="108" fill="#04325C"/>
+
+  <path d="M30,60 C24,40 42,26 58,30 C74,34 82,52 70,64"
+        fill="none" stroke="#47AADC" stroke-width="11"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
+        fill="none" stroke="#148244" stroke-width="11"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="72" cy="78" r="5.5" fill="#FCD214"/>
+</svg>
