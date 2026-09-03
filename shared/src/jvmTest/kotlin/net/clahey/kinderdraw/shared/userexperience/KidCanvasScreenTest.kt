@@ -7,7 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
@@ -38,6 +40,24 @@ private class GatedImageStorage(private val delegate: FakeImageStorage) : ImageS
 
     fun release() = proceed.complete(Unit)
 }
+
+/**
+ * Steps the clock frame by frame until [condition] holds, then leaves it
+ * stopped there. The save feedback is transient, and with the clock advancing
+ * on its own an animation can begin and end inside a single idle wait — so a
+ * poll-based wait misses it entirely. Requires `mainClock.autoAdvance = false`.
+ */
+@OptIn(ExperimentalTestApi::class)
+private fun ComposeUiTest.advanceUntil(frames: Int = 240, condition: () -> Boolean) {
+    repeat(frames) {
+        if (condition()) return
+        mainClock.advanceTimeByFrame()
+    }
+    throw AssertionError("condition still not met after $frames frames")
+}
+
+@OptIn(ExperimentalTestApi::class)
+private fun ComposeUiTest.hasNode(tag: String) = onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
 
 @OptIn(ExperimentalTestApi::class)
 class KidCanvasScreenTest {
@@ -216,6 +236,238 @@ class KidCanvasScreenTest {
         onRoot().performTouchInput { down(1, buttonCenter); up(1) }
         waitForIdle()
         assertEquals(4, imageStorage.createCalls.size)
+    }
+
+    // @spec CANVAS-UX-030, CANVAS-UX-031, CANVAS-UX-041, CANVAS-UX-042, CANVAS-UX-013
+    @Test
+    fun aSavedDrawingGoesIntoTheButtonAndAFreshSheetArrives() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+        onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertExists()
+
+        // The departing drawing goes away and a fresh sheet takes its place.
+        advanceUntil { hasNode(SAVE_ARRIVAL_TEST_TAG) }
+        onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertDoesNotExist()
+        assertTrue(state.isEmpty(), "the clear committed before the sheet was photographed")
+
+        mainClock.autoAdvance = true
+        waitForIdle()
+        onNodeWithTag(SAVE_ARRIVAL_TEST_TAG).assertDoesNotExist()
+        onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertDoesNotExist()
+        assertTrue(state.isEmpty())
+    }
+
+    // @spec CANVAS-UX-040
+    @Test
+    fun theDrawingWaitsAboveTheButtonWhileTheWriteIsStillRunning() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = GatedImageStorage(FakeImageStorage())
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+        // Long past the lift's own duration, with the write still outstanding.
+        repeat(120) { mainClock.advanceTimeByFrame() }
+        onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertExists()
+        onNodeWithTag(SAVE_ARRIVAL_TEST_TAG).assertDoesNotExist()
+        assertFalse(state.isEmpty(), "nothing has been cleared, because nothing has been written")
+
+        imageStorage.release()
+        mainClock.autoAdvance = true
+        waitForIdle()
+        onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertDoesNotExist()
+        assertTrue(state.isEmpty())
+    }
+
+    // @spec CANVAS-UX-043
+    @Test
+    fun theDrawingHopsClearOfTheButtonOnceTheOutcomeArrives() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = GatedImageStorage(FakeImageStorage())
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        // Held at the button by the outstanding write, so this is where it rests.
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+        repeat(60) { mainClock.advanceTimeByFrame() }
+        val resting = onNodeWithTag(SAVE_FLIGHT_TEST_TAG).fetchSemanticsNode().boundsInRoot
+
+        imageStorage.release()
+        // The answer's first effect is upward, away from the button — the hop
+        // that both ends the wait and clears the way for the descent.
+        advanceUntil {
+            hasNode(SAVE_FLIGHT_TEST_TAG) &&
+                onNodeWithTag(SAVE_FLIGHT_TEST_TAG).fetchSemanticsNode().boundsInRoot.top < resting.top
+        }
+    }
+
+    // @spec CANVAS-UX-038, CANVAS-UX-040
+    @Test
+    fun theTravellingDrawingStartsOutCoveringTheCanvasExactly() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val rootBounds = onRoot().fetchSemanticsNode().boundsInRoot
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+
+        // Step frame by frame so the flight's first frame can be inspected
+        // before any of the animation has been applied to it.
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+
+        val first = onNodeWithTag(SAVE_FLIGHT_TEST_TAG).fetchSemanticsNode().boundsInRoot
+        assertEquals(rootBounds, first, "the flight's first frame must be indistinguishable from the canvas")
+    }
+
+    // @spec CANVAS-UX-032, CANVAS-UX-029, CANVAS-UX-042
+    @Test
+    fun aFailedSaveReboundsWithNoSheetArrivingAndRestoresTheDrawing() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreates(count = 2, message = "disk full")
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+        onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertExists()
+        assertFalse(state.isEmpty())
+
+        mainClock.autoAdvance = true
+        waitForIdle()
+        onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertDoesNotExist()
+        onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertDoesNotExist()
+        // Nothing was taken away, so nothing arrives to replace it.
+        onNodeWithTag(SAVE_ARRIVAL_TEST_TAG).assertDoesNotExist()
+        assertFalse(state.isEmpty(), "the drawing is back, untouched")
+    }
+
+    // @spec CANVAS-UX-033
+    @Test
+    fun aFailedSaveFlashesRed() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreates(count = 2, message = "disk full")
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        advanceUntil { hasNode(SAVE_FAILURE_FLASH_TEST_TAG) }
+
+        mainClock.autoAdvance = true
+        waitForIdle()
+        onNodeWithTag(SAVE_FAILURE_FLASH_TEST_TAG).assertDoesNotExist()
+    }
+
+    // @spec CANVAS-UX-036
+    @Test
+    fun anEmptyCanvasShowsNoSaveFeedback() = runComposeUiTest {
+        val settings = FakeStyleSettings()
+        val state = PaintingState(settings)
+        val imageStorage = FakeImageStorage()
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+        repeat(120) {
+            mainClock.advanceTimeByFrame()
+            assertTrue(
+                !hasNode(SAVE_FLIGHT_TEST_TAG) && !hasNode(SAVE_ARRIVAL_TEST_TAG) &&
+                    !hasNode(SAVE_FLIGHT_COVER_TEST_TAG) && !hasNode(SAVE_FAILURE_FLASH_TEST_TAG),
+                "a sequence that wrote nothing has nothing to acknowledge",
+            )
+        }
+    }
+
+    // @spec CANVAS-UX-037
+    @Test
+    fun reducedMotionKeepsTheFlashAndDropsTheFlight() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+        imageStorage.failNextCreates(count = 2, message = "disk full")
+
+        setContent {
+            KidCanvasScreen(imageStorage = imageStorage, state = state, reduceMotion = true)
+        }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        // The failure still says something — it is the outcome with nothing
+        // else to fall back on, since no canvas clears to speak for it.
+        advanceUntil { hasNode(SAVE_FAILURE_FLASH_TEST_TAG) }
+        onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertDoesNotExist()
+        onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertDoesNotExist()
+
+        mainClock.autoAdvance = true
+        waitForIdle()
+        assertFalse(state.isEmpty())
+    }
+
+    // @spec CANVAS-UX-035, CANVAS-UX-004
+    @Test
+    fun noStrokeStartsWhileTheDrawingIsTravelling() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+        state.onPointerDown(pointerA, p0)
+        state.onPointerUp(pointerA)
+        val imageStorage = FakeImageStorage()
+
+        setContent { KidCanvasScreen(imageStorage = imageStorage, state = state) }
+        val buttonCenter = onNodeWithTag(NEW_PICTURE_TEST_TAG).fetchSemanticsNode().boundsInRoot.center
+        mainClock.autoAdvance = false
+        onRoot().performTouchInput { down(0, buttonCenter); up(0) }
+
+        advanceUntil { hasNode(SAVE_FLIGHT_TEST_TAG) }
+        // A touch landing on the travelling drawing reaches neither it nor
+        // Painting underneath: it takes no input, and the hold covers the flight.
+        onRoot().performTouchInput { down(1, Offset(5f, 5f)); up(1) }
+
+        mainClock.autoAdvance = true
+        waitForIdle()
+        assertTrue(state.isEmpty(), "the touch started no stroke on the freshly cleared canvas")
     }
 
     // @spec CANVAS-UX-004, CANVAS-UX-009, CANVAS-UX-019

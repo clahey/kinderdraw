@@ -16,6 +16,22 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1"
+
+        buildConfigField("boolean", "FAIL_SAVES", "false")
+    }
+
+    buildTypes {
+        debug {
+            // `./gradlew :androidApp:installDebug -PkinderdrawFailSaves=true`
+            // to watch New Picture's failed-save feedback on a device. No real
+            // MediaStore write can be made to fail by hand — see
+            // FailingImageStorage.
+            buildConfigField(
+                "boolean",
+                "FAIL_SAVES",
+                (findProperty("kinderdrawFailSaves") == "true").toString(),
+            )
+        }
     }
 
     compileOptions {
@@ -25,6 +41,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

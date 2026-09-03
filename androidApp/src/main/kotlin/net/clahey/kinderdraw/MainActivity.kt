@@ -9,8 +9,12 @@ import net.clahey.kinderdraw.shared.userexperience.KidCanvasScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val imageStorage = MediaStoreImageStorage(applicationContext).let {
+            // Constant-folded false in release builds — see FailingImageStorage.
+            if (BuildConfig.FAIL_SAVES) FailingImageStorage(it) else it
+        }
         setContent {
-            KidCanvasScreen(imageStorage = MediaStoreImageStorage(applicationContext))
+            KidCanvasScreen(imageStorage = imageStorage)
         }
     }
 }
