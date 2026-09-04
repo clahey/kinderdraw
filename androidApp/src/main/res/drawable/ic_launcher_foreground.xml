@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One continuous toddler scribble — see the Publishing LLD's Store Listing Assets.
+
+  The line is authored as two halves so its colour changes partway. The order of
+  the two paths, the seam at 74,58.25, and the green's flat caps are each
+  load-bearing, and that section explains why — read it before touching any path
+  data. Geometry is shared with ic_launcher_monochrome.xml and
+  docs/store-listing/icon-512.svg; edit the three together.
+
+  Brand light blue, green, and yellow — see docs/brand.md.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M30,60 C24,40 42,26 58,30 C71.5,33.5 79.5,47 74,58.25"
+        android:strokeColor="#47AADC"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M74,58.25 C73.0294,60.2353 71.75,62.25 70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
+        android:strokeColor="#148244"
+        android:strokeWidth="9"
+        android:strokeLineCap="butt"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="#FCD214"
+        android:pathData="M67.5,78 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0" />
+</vector>

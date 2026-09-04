@@ -6,9 +6,34 @@ plugins {
     alias(libs.plugins.kotlinCompose)
 }
 
+// Release signing credentials, read from ~/.gradle/gradle.properties (outside
+// this repository — the committed gradle.properties must never hold them) or
+// from ORG_GRADLE_PROJECT_-prefixed environment variables. Names avoid dots so
+// the environment form stays expressible.
+//
+// Absent entirely, the release build is simply unsigned rather than broken, so
+// a checkout without the keystore still builds. Pass them with -P only if you
+// don't mind the password appearing in `ps`.
+val keystorePath: String? = findProperty("KINDERDRAW_KEYSTORE") as String?
+val keystorePassword: String? = findProperty("KINDERDRAW_KEYSTORE_PASSWORD") as String?
+
 android {
     namespace = "net.clahey.kinderdraw"
     compileSdk = 36
+
+    signingConfigs {
+        if (keystorePath != null && keystorePassword != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = (findProperty("KINDERDRAW_KEY_ALIAS") as String?) ?: "kinderdraw"
+                // PKCS12 keystores — what keytool produces by default, whatever
+                // the file is named — require these to match, so the key
+                // password falls back to the store password.
+                keyPassword = (findProperty("KINDERDRAW_KEY_PASSWORD") as String?) ?: keystorePassword
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "net.clahey.kinderdraw"
@@ -31,6 +56,16 @@ android {
                 "FAIL_SAVES",
                 (findProperty("kinderdrawFailSaves") == "true").toString(),
             )
+        }
+
+        release {
+            // Nothing to obfuscate in a public-source app, and no keep rules to
+            // get wrong — see the Publishing LLD's Decisions.
+            isMinifyEnabled = false
+
+            // Null when the credentials above are absent, which leaves the
+            // bundle unsigned rather than failing the build.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
