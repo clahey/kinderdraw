@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup and device-transfer scope (Android 12+).
+
+  Saved drawings are not covered here and cannot be: they live in the device's
+  shared MediaStore album, which sits outside the app's own backup scope
+  entirely, governed instead by whatever gallery/backup app the user runs (see
+  the Image Storage LLD's Android Storage Backend).
+
+  The app holds nothing in its own private storage yet, so these rules govern
+  nothing today. They are declared rather than defaulted so that whatever the
+  Config store adds later is included by a decision instead of by accident.
+-->
+<data-extraction-rules>
+    <cloud-backup />
+    <device-transfer />
+</data-extraction-rules>

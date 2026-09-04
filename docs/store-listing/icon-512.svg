@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Editable master for the Play Console's 512x512 high-res store icon.
+
+  viewBox matches the adaptive-icon canvas (108x108) so the mark stays
+  geometrically identical to ic_launcher_foreground.xml and
+  ic_launcher_monochrome.xml under androidApp/src/main/res/drawable/ — edit the
+  three together.
+
+  Draw order, the seam at 74,58.25, and the green's flat caps are each
+  load-bearing: see the Publishing LLD's Store Listing Assets before touching
+  any path data.
+
+  Full-bleed square with no rounding of its own: Play applies its own corner
+  masking. Nothing here is transparent, but the export still carries a fully
+  opaque alpha channel, because Play specifies 32-bit for this asset — it is
+  the feature graphic, a different asset, that must have no alpha channel.
+
+  Colours are the brand palette — see docs/brand.md.
+
+  Export:
+    rsvg-convert -w 512 -h 512 icon-512.svg -o icon-512.png
+    magick icon-512.png -alpha set PNG32:icon-512.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512" height="512"
+     viewBox="0 0 108 108">
+
+  <rect x="0" y="0" width="108" height="108" fill="#04325C"/>
+
+  <path d="M30,60 C24,40 42,26 58,30 C71.5,33.5 79.5,47 74,58.25"
+        fill="none" stroke="#47AADC" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M74,58.25 C73.0294,60.2353 71.75,62.25 70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
+        fill="none" stroke="#148244" stroke-width="9"
+        stroke-linecap="butt" stroke-linejoin="round"/>
+
+  <circle cx="72" cy="78" r="4.5" fill="#FCD214"/>
+</svg>
