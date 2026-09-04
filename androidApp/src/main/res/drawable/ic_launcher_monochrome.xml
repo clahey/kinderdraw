@@ -3,11 +3,9 @@
   The themed-icon layer (Android 13+), which the system tints as a flat
   silhouette — so the colour shift that carries the full-colour icon is absent
   here by necessity, and the mark has to hold up as one shape. Geometry is
-  identical to ic_launcher_foreground; only the paint differs, and the two
-  halves are a single path since nothing needs to cross over anything. It still
-  carries that file's seam anchors, so the two stay identical — the control
-  points either side of 74,58.25 are colinear through it, so writing them as
-  one uninterrupted path costs nothing.
+  identical to ic_launcher_foreground, seam anchors included; only the paint
+  differs. With no colour change to carry, the two halves are one path — the
+  anchors sit mid-path here and nothing crosses over anything.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"

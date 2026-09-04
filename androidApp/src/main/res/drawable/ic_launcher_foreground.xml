@@ -2,22 +2,11 @@
 <!--
   One continuous toddler scribble — see the Publishing LLD's Store Listing Assets.
 
-  The line is authored as two overlapping halves so its colour changes partway.
-  Draw order is load-bearing: the green half comes second and therefore passes
-  over the blue where the line crosses itself, which is what makes the crossing
-  read as one line going over its own path. Reordering these two paths breaks
-  the icon.
-  The colour changes *underneath* that crossing, not at a point in the open, so
-  the seam between the two halves is never visible and the green needs no end
-  cap to hide it — hence butt at both ends, with the far end under the yellow
-  dot. A round or square cap at the seam reaches past the blue it is laid over
-  and shows as a rim of light blue.
-
-  The halves meet at 74,58.25 with the control points either side of it —
-  79.5,47 and 73.0294,60.2353 — colinear through it, which is what makes them
-  read as one continuous curve rather than two that happen to touch. That lone
-  unrounded control point is the price of the constraint: move any of those
-  three and the other two have to be re-derived, or the line kinks at the seam.
+  The line is authored as two halves so its colour changes partway. The order of
+  the two paths, the seam at 74,58.25, and the green's flat caps are each
+  load-bearing, and that section explains why — read it before touching any path
+  data. Geometry is shared with ic_launcher_monochrome.xml and
+  docs/store-listing/icon-512.svg; edit the three together.
 
   Brand light blue, green, and yellow — see docs/brand.md.
 -->
