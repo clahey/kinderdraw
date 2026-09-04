@@ -113,7 +113,7 @@ The Play Console also requires a **512×512 high-res store icon**, a static PNG 
 
 ### Active
 
-1. **`docs/brand.md` is not present on this branch**, though it exists on `kid-button-press-activation` and lands here when that merges. Every palette reference in this doc, and every brand hex in the icon sources, points at it — so until the merge those hex values have no canonical source in this tree. That doc also keeps a list of every file holding a literal brand hex, which a `docs/brand.md` grep is meant to enumerate; the three icon drawables and `icon-512.svg` belong on it and must be added when the two branches meet.
+None.
 
 ### Deferred
 
@@ -125,7 +125,7 @@ The Play Console also requires a **512×512 high-res store icon**, a static PNG 
 ## References
 
 - Root HLD: `docs/high-level-design.md` — Tenets (free and open source), Goals and Non-Goals (no advertising on the kid canvas, on any platform), Key Design Decisions (`minSdk 30`, `targetSdk`/`compileSdk 36` against Play's publishing requirement; ads on the kid canvas versus the companion screen), Target Users (the toddler audience this segment's compliance posture follows from)
-- `docs/brand.md` — the brand palette; canonical source for every hex named here (not yet present on this branch — see Open Questions, Active #1)
+- `docs/brand.md` — the brand palette; canonical source for every hex named here, and the list of files holding a literal copy of one
 - `docs/intent/image-storage/image-storage-design.md § Android Storage Backend` — what the app actually does with saved drawings, which the privacy policy and data-safety declaration are grounded in
 - `docs/intent/kid-canvas/widgets/widgets-design.md § Control Catalog` — New Picture's sun glyph, which the icon deliberately does not reuse
 - `docs/store-listing/release-checklist.md` — the Path to Publishing above as tickable steps with exact commands; the file to work from
