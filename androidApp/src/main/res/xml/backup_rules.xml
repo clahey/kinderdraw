@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The pre-Android-12 form of data_extraction_rules.xml, which still applies on
+  API 30 and 31. Same scope and same reasoning — see that file.
+-->
+<full-backup-content />
