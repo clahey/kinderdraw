@@ -61,7 +61,6 @@ change that prompted it.
 
 ## Contact
 
-Questions about this policy can be sent to
-`<contact address — to be confirmed before publication>`.
+Questions about this policy can be sent to youraveragechris@gmail.com.
 
 The source code is available at <https://github.com/clahey/kinderdraw>.

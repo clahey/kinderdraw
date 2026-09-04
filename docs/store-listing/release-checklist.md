@@ -10,8 +10,8 @@ person: a password, a browser, or a device.
 
 ## 1. Local tooling
 
-- [ ] **(you)** `sudo apt install librsvg2-bin imagemagick`
-- [ ] Verify: `rsvg-convert --version` and `magick -version` both answer.
+- [x] **(you)** `sudo apt install librsvg2-bin imagemagick`
+- [x] Verify: `rsvg-convert --version` and `magick -version` both answer.
 
 `librsvg2-bin` is the renderer that matters. ImageMagick alone will still
 produce a PNG, but it falls back to its own SVG renderer when librsvg is
@@ -24,7 +24,7 @@ ImageMagick is needed separately for the alpha and format handling below.
 - [x] Manifest label resolves through `@string/app_name` (`KinderDraw`)
 - [x] `release` build type, signed when credentials are present — see section 4
 - [x] `PRIVACY.md` written
-- [ ] **(you)** Replace the placeholder contact address in `PRIVACY.md`
+- [x] Contact address in `PRIVACY.md`
 - [ ] Merge PR #16 to main, then bring main into this branch — the beta should
       carry the interaction lock and the New Picture fixes, and `docs/brand.md`
       arrives with it
@@ -44,9 +44,14 @@ Play's requirements, which the verify steps below check against:
 | Phone screenshots | 2–8 of them | PNG or JPEG, 16:9 or 9:16, 320–3840 px per side |
 
 - [x] Icon master authored: `docs/store-listing/icon-512.svg`
-- [ ] Export it:
-      `rsvg-convert -w 512 -h 512 docs/store-listing/icon-512.svg -o docs/store-listing/icon-512.png`
-- [ ] Verify: `magick identify docs/store-listing/icon-512.png` reports `512x512`
+- [x] Export it. `rsvg-convert` alone yields a 24-bit PNG, so the second command
+      adds the opaque alpha channel Play's 32-bit spec asks for:
+
+      rsvg-convert -w 512 -h 512 docs/store-listing/icon-512.svg -o docs/store-listing/icon-512.png
+      magick docs/store-listing/icon-512.png -alpha set PNG32:docs/store-listing/icon-512.png
+
+- [x] Verify: `magick identify docs/store-listing/icon-512.png` reports
+      `512x512` and `TrueColorAlpha`
 - [ ] Author `docs/store-listing/feature-graphic.svg` — navy field, the scribble,
       wordmark, and "Big fingers welcome." Keep type and artwork in separate
       bands rather than overlapping
