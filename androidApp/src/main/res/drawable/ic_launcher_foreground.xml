@@ -7,6 +7,10 @@
   over the blue where the line crosses itself, which is what makes the crossing
   read as one line going over its own path. Reordering these two paths breaks
   the icon.
+  The green's flat caps are load-bearing the same way: neither of its ends is
+  ever seen — the start is buried under the line's own middle where it crosses
+  back over, the finish under the yellow dot — and a round cap there would
+  reach past the blue and show as a rim of light blue.
 
   Brand light blue, green, and yellow — see docs/brand.md.
 -->
@@ -25,7 +29,7 @@
         android:pathData="M70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
         android:strokeColor="#148244"
         android:strokeWidth="9"
-        android:strokeLineCap="round"
+        android:strokeLineCap="butt"
         android:strokeLineJoin="round" />
     <path
         android:fillColor="#FCD214"
