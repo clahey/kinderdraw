@@ -3,35 +3,15 @@
 Source of truth for the Play Console listing text. Paste from here rather than
 editing in the Console, so the two don't drift.
 
-Positioning follows the Publishing LLD: the differentiator is that the app is
-built for toddler motor control, not that it is another drawing app. Every
-claim below is one the app actually keeps — see `PRIVACY.md` and the merged
-release manifest, which declares no internet permission.
-
 ## Title
 
-**KinderDraw** — 10 characters (Play allows 30).
-
-MixedCase is the display form throughout, and matches `@string/app_name`. The
-repository, package, and `applicationId` stay lowercase — they aren't display
-names.
+**KinderDraw** — 10 characters (Play allows 30). Matches `@string/app_name`.
 
 ## Short description
 
-Play allows 80 characters. This is the line shown in search results and
-browse, so it does more work than the full description.
-
 > A drawing app built for toddlers. No ads, no menus, nothing to get stuck on.
 
-76 characters.
-
-### Alternatives considered
-
-- *Big fingers welcome. A drawing app made for toddlers, with no ads.* (66) —
-  leads with the slogan, but spends the scarce line on a phrase that means
-  nothing until you already know what the app is.
-- *Free, open-source drawing for little kids. No ads, no account, no menus.*
-  (71) — front-loads licensing, which no parent is searching for.
+76 characters (Play allows 80).
 
 ## Full description
 
@@ -65,14 +45,9 @@ browse, so it does more work than the full description.
 > KinderDraw is free and open source under the MIT licence. Anyone can read
 > exactly what it does: github.com/clahey/kinderdraw
 
-## Notes for whoever updates this
+## Before changing any of this
 
-- Keep "no ads, ever" and the no-internet claim consistent with `PRIVACY.md`
-  and with the Data safety declaration. All three have to say the same thing.
-- The description deliberately avoids naming an age range in a way that
-  reads as a developmental claim. The app is for roughly 2–4 year olds, but
-  Play's target-audience declaration is where that belongs, not the marketing
-  copy.
-- Avoid any claim about educational or developmental benefit. There is no
-  evidence for one, and it would invite scrutiny the app has no reason to
-  attract.
+The Publishing LLD's Decisions table settles what this copy may and may not
+claim, and why each line reads the way it does. Read it first — several of
+these sentences are constrained by Play declarations elsewhere rather than
+chosen freely.

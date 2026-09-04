@@ -22,7 +22,7 @@ ImageMagick is needed separately for the alpha and format handling below.
 
 - [x] `res/` exists: `strings.xml`, adaptive icon drawables, `mipmap-anydpi-v26`, backup rules
 - [x] Manifest label resolves through `@string/app_name` (`KinderDraw`)
-- [x] `release` build type, deliberately unsigned
+- [x] `release` build type, signed when credentials are present — see section 4
 - [x] `PRIVACY.md` written
 - [ ] **(you)** Replace the placeholder contact address in `PRIVACY.md`
 - [ ] Merge PR #16 to main, then bring main into this branch — the beta should
