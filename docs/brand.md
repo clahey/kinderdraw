@@ -42,3 +42,10 @@ Change the value here first, then walk that list. The copies that hold
 literal hex:
 
 - `shared/src/commonMain/kotlin/net/clahey/kinderdraw/shared/userexperience/KidCanvasScreen.kt` — New Picture's sun-icon tint
+- `androidApp/src/main/res/drawable/ic_launcher_background.xml` — the launcher icon's field
+- `androidApp/src/main/res/drawable/ic_launcher_foreground.xml` — the launcher icon's scribble and dot
+- `docs/store-listing/icon-512.svg` — the same mark again, as the Play store icon's master
+
+`ic_launcher_monochrome.xml` is deliberately absent: the themed-icon layer is
+tinted by the system, so it holds no brand hex to keep in sync. It does share
+the foreground's path geometry — see the Publishing LLD's Store Listing Assets.
