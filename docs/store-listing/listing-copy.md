@@ -34,11 +34,12 @@ editing in the Console, so the two don't drift.
 > own album. They're ordinary pictures: look at them, share them, or delete
 > them with the photo app you already use. Nothing is locked inside KinderDraw.
 >
-> **No ads. Ever.**
+> **No ads.**
 >
-> There is no advertising in KinderDraw, and there never will be. There are no
-> in-app purchases, no subscriptions, no sign-in, and no account. The app
-> can't even reach the internet — it doesn't request permission to.
+> There is no advertising in KinderDraw. There are no in-app purchases and no
+> subscriptions. There is no sign-in and no account, and none will ever be
+> required to draw. The app can't even reach the internet — it doesn't request
+> permission to.
 >
 > Nothing your child draws leaves your device.
 >
