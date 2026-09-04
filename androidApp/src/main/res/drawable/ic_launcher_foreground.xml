@@ -7,10 +7,17 @@
   over the blue where the line crosses itself, which is what makes the crossing
   read as one line going over its own path. Reordering these two paths breaks
   the icon.
-  The green's flat caps are load-bearing the same way: neither of its ends is
-  ever seen — the start is buried under the line's own middle where it crosses
-  back over, the finish under the yellow dot — and a round cap there would
-  reach past the blue and show as a rim of light blue.
+  The colour changes *underneath* that crossing, not at a point in the open, so
+  the seam between the two halves is never visible and the green needs no end
+  cap to hide it — hence butt at both ends, with the far end under the yellow
+  dot. A round or square cap at the seam reaches past the blue it is laid over
+  and shows as a rim of light blue.
+
+  The halves meet at 74,58.25 with the control points either side of it —
+  79.5,47 and 73.0294,60.2353 — colinear through it, which is what makes them
+  read as one continuous curve rather than two that happen to touch. That lone
+  unrounded control point is the price of the constraint: move any of those
+  three and the other two have to be re-derived, or the line kinks at the seam.
 
   Brand light blue, green, and yellow — see docs/brand.md.
 -->
@@ -20,13 +27,13 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:pathData="M30,60 C24,40 42,26 58,30 C74,34 82,52 70,64"
+        android:pathData="M30,60 C24,40 42,26 58,30 C71.5,33.5 79.5,47 74,58.25"
         android:strokeColor="#47AADC"
         android:strokeWidth="9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
     <path
-        android:pathData="M70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
+        android:pathData="M74,58.25 C73.0294,60.2353 71.75,62.25 70,64 C58,76 38,72 40,58 C42,46 60,44 70,54 C76,60 78,70 72,78"
         android:strokeColor="#148244"
         android:strokeWidth="9"
         android:strokeLineCap="butt"
