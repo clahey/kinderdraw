@@ -2,14 +2,21 @@
 
 ## Screen Composition
 
-- [D] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose Widgets controls as chrome anchored along the screen's edges on top of it, so no control ever sits over the drawing area.
+- [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose Widgets controls as chrome anchored along the screen's edges on top of it, so no control ever sits over the drawing area.
 
 ## Input Arbitration
 
-- [D] **CANVAS-UX-002**: When a pointer touches down inside some Widgets control's hit region and no gesture is currently live, the system shall let that control claim the pointer as the live gesture, reported through that control's `onPressedChange(true)` callback.
-- [D] **CANVAS-UX-003**: When a pointer touches down outside every Widgets control's hit region and no gesture is currently live, the system shall route that pointer to Painting instead, starting a stroke — even when the touch missed a nearby control's hit region.
-- [D] **CANVAS-UX-004**: While a gesture is live — a Widgets control between its `onPressedChange(true)` and matching `onPressedChange(false)`, or Painting between its `onStrokeActiveChange(true)` and matching `onStrokeActiveChange(false)` — the system shall block every other pointer's down event from reaching whichever component isn't holding that gesture, so it can't claim a control or start a stroke.
-- [D] **CANVAS-UX-005**: When the live gesture ends, the system shall accept only a subsequent pointer-down event as eligible to start the next live gesture — a pointer already held down at that moment, blocked under CANVAS-UX-004, stays blocked until it lifts and touches down again.
+- [x] **CANVAS-UX-002**: When a pointer touches down inside some Widgets control's hit region and no component holds the interaction, the system shall grant the interaction to that control, which claims the pointer.
+- [x] **CANVAS-UX-003**: When a pointer touches down outside every Widgets control's hit region, and either no component holds the interaction or Painting itself is the holder, the system shall route that pointer to Painting instead, starting a stroke — even when the touch missed a nearby control's hit region.
+- [x] **CANVAS-UX-004**: While one component holds the interaction, the system shall refuse it to every other component, so no other Widgets control can claim a pointer and no stroke can start on Painting.
+- [x] **CANVAS-UX-005**: When a component is refused the interaction, the system shall keep that refusal in force for the remainder of that component's gesture — a pointer already down when the holder releases stays inert until it lifts and touches down again, and only a subsequent pointer-down is eligible to start the next gesture.
+- [x] **CANVAS-UX-020**: The system shall grant the interaction to at most one component at a time, refusing every request made while it is held.
+- [x] **CANVAS-UX-021**: The system shall provide no way to release the interaction other than through the hold object a successful request returned, so a component that never acquired the interaction cannot release it. This is a property of the type's surface rather than of its behavior, so it carries no test: violating it would fail to compile.
+- [x] **CANVAS-UX-022**: When a hold that has already been released is released again, the system shall leave the interaction's current holder unchanged, so a stale hold cannot free a later holder's interaction.
+- [x] **CANVAS-UX-023**: The system shall request and release the interaction only from the UI dispatcher, and shall carry no synchronization of its own. A control's release after a suspending activation satisfies this by running in a composition-tied scope — see CANVAS-WIDGETS-024. Being an invariant over every call site rather than a triggered behavior, this carries no test of its own; each call site's own tests exercise it.
+- [x] **CANVAS-UX-024**: When the kid canvas screen is composed, including after an OS-driven recreation, the system shall start with the interaction unheld rather than restoring any hold in effect beforehand.
+- [x] **CANVAS-UX-027**: The system shall request the interaction only on an input event carrying at least one pointer newly touching down, and only while the requesting component isn't already holding it — so a hovering pointer never takes the interaction, and a pointer joining a gesture already held doesn't request a second time.
+- [x] **CANVAS-UX-026**: When two pointers touch down in the same input event, one inside a Widgets control's hit region and one outside every control's hit region, the system shall grant the interaction to exactly one of them and refuse the other. Which one wins is unspecified — the two requests race, and either outcome is acceptable. Layering decides only which component a *single* pointer reaches at all, per CANVAS-UX-002 and CANVAS-UX-003. The exactly-one-wins half is verified at the lock itself rather than through the screen: the test harness enqueues each touch-down as its own input event, so two pointers arriving in one event can't be constructed from a test.
 
 ## Feature Gating
 
@@ -19,12 +26,16 @@
 
 ## Lifecycle Behavior — New Picture
 
-- [D] **CANVAS-UX-009**: When the New Picture control is activated, the system shall hold the live-gesture slot for the entire sequence below, from activation through the clear step completing, so no other control-press or stroke can start until it finishes.
-- [D] **CANVAS-UX-010**: When the New Picture sequence runs, the system shall first ask Painting whether the current drawing is empty.
-- [D] **CANVAS-UX-011**: When the New Picture sequence's emptiness check reports the drawing is not empty, the system shall call Painting's save operation (with no id, since this is the drawing's first save) before clearing, writing the drawing to Image Storage.
-- [D] **CANVAS-UX-012**: When the New Picture sequence's emptiness check reports the drawing is empty, the system shall skip the save call entirely, writing nothing to Image Storage.
-- [D] **CANVAS-UX-013**: When the New Picture sequence reaches its final step, the system shall clear Painting's canvas, regardless of whether a save was performed.
-- [D] **CANVAS-UX-014**: The system shall show no confirmation dialog or intermediate state for the New Picture sequence — the toddler can resume drawing immediately once it completes.
+- [x] **CANVAS-UX-009**: When New Picture's pointer is claimed, the system shall hold the interaction from that moment through that same pointer's release, so no other control-press or stroke can start during the press itself — regardless of whether the release goes on to activate New Picture.
+- [x] **CANVAS-UX-019**: When New Picture activates, the system shall run the sequence below as that activation's own work, under the hold its press already took, keeping that hold until the sequence ends — whether it ran through to the clear or stopped early at a failed save — rather than releasing it at the press's own release.
+- [x] **CANVAS-UX-010**: When the New Picture sequence runs, the system shall first ask Painting whether the current drawing is empty.
+- [x] **CANVAS-UX-011**: When the New Picture sequence's emptiness check reports the drawing is not empty, the system shall call Painting's save operation with no id, so Image Storage creates a new entry, before clearing.
+- [x] **CANVAS-UX-012**: When the New Picture sequence's emptiness check reports the drawing is empty, the system shall skip the save call entirely, writing nothing to Image Storage.
+- [x] **CANVAS-UX-013**: When the New Picture sequence reaches its final step, the system shall clear Painting's canvas, including when the emptiness check skipped the save entirely — a sequence with nothing to write still clears. A sequence ended early by a failed save never reaches this step (see CANVAS-UX-029).
+- [x] **CANVAS-UX-028**: When the New Picture sequence's save call reports a failure, the system shall call Painting's save operation exactly once more, immediately and with no intervening delay.
+- [x] **CANVAS-UX-029**: When the New Picture sequence's retried save also reports a failure, the system shall end the sequence there without clearing Painting's canvas, leaving the current drawing exactly as it stood.
+- [ ] **CANVAS-UX-014**: The system shall show no confirmation dialog or intermediate state for the New Picture sequence — the toddler can resume drawing immediately once it completes.
+- [x] **CANVAS-UX-025**: When an OS-driven recreation cancels a New Picture sequence before it completes, the system shall leave the current drawing in place on the restored screen and resume no part of that sequence. Verified by inspection rather than by test — see the LLD's Open Questions.
 
 ## Lifecycle Behavior — OS Navigation and Process Lifecycle
 
@@ -34,4 +45,4 @@
 ## Interaction Feedback
 
 - [D] **CANVAS-UX-017**: When a color swatch is activated, the system shall write that color into `StyleSettings` as the color for the next resolved brush instance, so Painting's next stroke starts in the new color with no separate acknowledgment step.
-- [D] **CANVAS-UX-018**: The system shall provide no feedback for the New Picture sequence beyond the cleared canvas itself — no confirmation banner or toast.
+- [ ] **CANVAS-UX-018**: The system shall provide no feedback for the New Picture sequence beyond the cleared canvas itself — no confirmation banner or toast.

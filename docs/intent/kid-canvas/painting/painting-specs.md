@@ -1,8 +1,11 @@
 # Painting — EARS Specs
 
-## Composable Shape
+## Holding the Interaction
 
-- [x] **CANVAS-PAINT-018**: When a pointer touches down while no other pointer is currently down on the drawing surface, the system shall report `onStrokeActiveChange(true)`; when the last pointer that's currently down lifts, leaving none down, the system shall report `onStrokeActiveChange(false)`. A pointer touching down or lifting while at least one other pointer remains down shall not re-invoke `onStrokeActiveChange`. Whether any pointer remains down shall be evaluated once per input event, after every pointer change within that event has been applied, not separately for each individual change within it — so a pointer lifting and a different pointer touching down together in the same input event doesn't spuriously end and restart the gesture.
+- [x] **CANVAS-PAINT-018**: When a pointer touches down while no other pointer is currently down on the drawing surface, the system shall request the interaction from the interaction lock it was given; when the last pointer that's currently down lifts, leaving none down, the system shall release the hold it took. A pointer touching down or lifting while at least one other pointer remains down shall neither request nor release the interaction. Whether any pointer remains down shall be evaluated once per input event, after every pointer change within that event has been applied, not separately for each individual change within it — so a pointer lifting and a different pointer touching down together in the same input event doesn't spuriously end and restart the gesture.
+- [x] **CANVAS-PAINT-022**: When the interaction lock refuses Painting's request, the system shall begin no stroke and apply no pointer change to the drawing, and shall consume that gesture's remaining pointer events without requesting the interaction again, until every pointer of that gesture has lifted.
+- [x] **CANVAS-PAINT-024**: When an input event carries a pointer that is neither pressed nor newly lifted — a hovering pointer — the system shall neither consume that change nor record it against any stroke, leaving the drawing and the interaction untouched.
+- [x] **CANVAS-PAINT-023**: When Painting's pointer input is cancelled while it holds the interaction, the system shall release that hold, leaving every stroke that was live at that moment untouched in the drawing state.
 
 ## Stroke Model
 

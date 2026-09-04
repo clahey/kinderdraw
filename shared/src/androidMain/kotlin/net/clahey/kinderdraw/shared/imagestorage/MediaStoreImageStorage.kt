@@ -24,10 +24,22 @@ import kotlinx.coroutines.withContext
 
 /** MediaStore-backed [ImageStorage] — see the Image Storage LLD's Android Storage Backend. */
 // @spec IMAGES-001, IMAGES-002, IMAGES-003, IMAGES-004, IMAGES-005, IMAGES-006, IMAGES-007,
-// IMAGES-009, IMAGES-010, IMAGES-011, IMAGES-014, IMAGES-015, IMAGES-016, IMAGES-017
+// IMAGES-009, IMAGES-010, IMAGES-011, IMAGES-014, IMAGES-015, IMAGES-016, IMAGES-017,
+// IMAGES-018, IMAGES-019
 class MediaStoreImageStorage(private val context: Context) : ImageStorage {
     private val collection: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    private val albumRelativePath = "${Environment.DIRECTORY_PICTURES}/kinderdraw/"
+    private val albumRelativePath = "${Environment.DIRECTORY_PICTURES}/KinderDraw/"
+
+    /**
+     * The album path as a `LIKE` pattern, which SQLite matches
+     * case-insensitively for ASCII — the album directory can be recorded
+     * under any casing and every spelling names the same directory. `LIKE`'s
+     * own wildcards are escaped so the pattern still matches literally.
+     */
+    private val albumPathPattern = albumRelativePath
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
 
     override val entries: Flow<List<SavedDrawingEntry>> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -42,8 +54,8 @@ class MediaStoreImageStorage(private val context: Context) : ImageStorage {
 
     private fun queryEntries(): List<SavedDrawingEntry> = buildList {
         val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATE_TAKEN)
-        val selection = "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
-        val selectionArgs = arrayOf(albumRelativePath)
+        val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? ESCAPE '\\'"
+        val selectionArgs = arrayOf(albumPathPattern)
         context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
             val idIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
             val dateIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
@@ -65,7 +77,16 @@ class MediaStoreImageStorage(private val context: Context) : ImageStorage {
                 }
                 val uri = context.contentResolver.insert(collection, values)
                     ?: throw ImageStorageException("MediaStore insert failed")
-                writeBitmap(uri, image)
+                // The entry exists from here on, so a failure past this point
+                // has to take it back out again — a create reported as failed
+                // leaves nothing behind. A cleanup that fails itself must not
+                // replace the failure that caused it.
+                try {
+                    writeBitmap(uri, image)
+                } catch (e: Throwable) {
+                    runCatching { context.contentResolver.delete(uri, null, null) }
+                    throw e
+                }
                 SavedDrawingEntry(ContentUris.parseId(uri).toString(), resolvedTimestamp)
             }
         }

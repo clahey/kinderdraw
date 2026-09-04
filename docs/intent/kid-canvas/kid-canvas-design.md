@@ -18,7 +18,9 @@ Kid Canvas is composed of four components:
 - **Painting** — converts a pointer/touch sequence into stroke data and renders it to the drawing surface, delegating a stroke's actual visual rendering to a Painting Style brush.
 - **Painting Style** — defines what a stroke or the canvas background looks like: pluggable brush shapes, and color sources (fixed or algorithmically varied) that produce the colors a brush or background renders with.
 
-User Experience is the composition root: it composes Widgets and hosts Painting, and is the only component that depends on both. Painting depends on Painting Style for its brush/stroke rendering strategy; User Experience depends on Painting Style for the color sources behind `StyleSettings`. Painting Style depends on none of the other three, and Widgets and Painting don't depend on each other.
+User Experience is the composition root: it composes Widgets and hosts Painting, and is the only component that depends on both. Painting depends on Painting Style for its brush/stroke rendering strategy; User Experience depends on Painting Style for the color sources behind `StyleSettings`. Painting Style depends on none of the other three, and Widgets and Painting don't depend on each other — the invariant that keeps two unrelated input components from growing knowledge of one another.
+
+Widgets and Painting do each depend back on User Experience for one thing: the interaction lock that arbitrates between them (see the User Experience LLD's Input Arbitration). It lives with the arbitration intent it serves rather than in a component of its own, and it tells a child only whether some other gesture is live, never whose — so neither child learns the other exists.
 
 ## System Design
 
@@ -34,6 +36,8 @@ graph TD
     UX --> Painting
     UX --> Style
     Painting --> Style
+    Widgets -- interaction lock --> UX
+    Painting -- interaction lock --> UX
     Store -- reads UX config --> UX
     Painting -- writes drawings --> Store
 ```
