@@ -278,6 +278,52 @@ class PaintingStateTest {
         assertEquals(24, image.height)
     }
 
+    // @spec CANVAS-PAINT-025
+    @Test
+    fun snapshotRendersTheDrawingAtItsLastRenderedSizeWithoutStoringIt() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush, background = Color.Blue)
+        val painting = PaintingState(settings)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
+        testDrawScope(width = 40, height = 24) { with(painting) { render() } }
+
+        val image = painting.snapshot()
+
+        assertEquals(40, image.width)
+        assertEquals(24, image.height)
+        // The background is drawn before any stroke, exactly as on screen —
+        // proof this went through the same render path rather than a blank.
+        assertEquals(Color.Blue, image.toPixelMap()[0, 0])
+    }
+
+    // @spec CANVAS-PAINT-025
+    @Test
+    fun snapshotLeavesTheDrawingUntouched() {
+        val brush = FakeBrush()
+        val settings = FakeStyleSettings(brush = brush)
+        val painting = PaintingState(settings)
+
+        painting.onPointerDown(pointerA, p0)
+        painting.onPointerUp(pointerA)
+        testDrawScope { with(painting) { render() } }
+        val backgroundQueriesBefore = settings.backgroundQueryCount
+        val brushQueriesBefore = settings.brushQueryCount
+
+        painting.snapshot()
+        painting.snapshot()
+
+        assertFalse(painting.isEmpty(), "the strokes are still there")
+        // Neither snapshot resolved a new background the way clear() would,
+        // nor started a stroke the way a pointer would.
+        assertEquals(backgroundQueriesBefore, settings.backgroundQueryCount)
+        assertEquals(brushQueriesBefore, settings.brushQueryCount)
+        // One on-screen render plus one per snapshot: the drawing is replayed
+        // through its brush each time rather than cached.
+        assertEquals(3, brush.renderCalls.size)
+    }
+
     // @spec CANVAS-PAINT-009
     @Test
     fun saveBeforeAnyRenderCallDoesNotCrash() = runBlocking {

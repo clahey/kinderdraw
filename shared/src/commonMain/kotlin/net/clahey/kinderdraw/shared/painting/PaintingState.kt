@@ -72,7 +72,7 @@ class PaintingState(
 
     // @spec CANVAS-PAINT-009, CANVAS-PAINT-012, CANVAS-PAINT-017
     suspend fun save(imageStorage: ImageStorage, id: String? = null): Result<String> {
-        val image = rasterize()
+        val image = snapshot()
         val result = if (id == null) {
             imageStorage.create(image)
         } else {
@@ -102,8 +102,15 @@ class PaintingState(
         }
     }
 
-    /** Rasterizes the drawing off-screen, at the size last seen in [render] — see the Painting LLD's Save and Clear. */
-    private fun rasterize(): ImageBitmap {
+    /**
+     * The current drawing as a raster image, rendered off-screen at the size
+     * last seen in [render] and written nowhere — see the Painting LLD's Save
+     * and Clear. [save] rasterizes through this too, so a caller wanting both
+     * an image and a stored copy renders the drawing twice; the two operations
+     * stay independent rather than one making the other correct.
+     */
+    // @spec CANVAS-PAINT-025
+    fun snapshot(): ImageBitmap {
         val width = lastRenderSize.width.toInt().coerceAtLeast(1)
         val height = lastRenderSize.height.toInt().coerceAtLeast(1)
         val image = ImageBitmap(width, height)
