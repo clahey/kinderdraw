@@ -10,6 +10,7 @@ import net.clahey.kinderdraw.shared.paintingstyle.PowerDistribution
 import net.clahey.kinderdraw.shared.paintingstyle.RandomColor
 import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
 import net.clahey.kinderdraw.shared.paintingstyle.UniformDistribution
+import kotlin.random.Random
 
 /**
  * Today's placeholder [StyleSettings] — no swatch-tap wiring exists yet
@@ -17,13 +18,19 @@ import net.clahey.kinderdraw.shared.paintingstyle.UniformDistribution
  * to a fresh [RandomColor] sample and the background stays a fixed white.
  * See the User Experience LLD's Interaction Feedback for why brightness is
  * biased toward the bright end rather than sampled uniformly.
+ *
+ * [strokeRandom] is the generator behind the stroke color, defaulting to an
+ * unseeded one. The background needs none while it stays constant; when it
+ * gains randomness it takes its own named generator rather than sharing this
+ * one, so that its draws can't shift stroke colors — see the User Experience
+ * LLD's Seeding the Sampled Colors.
  */
-class DefaultStyleSettings : StyleSettings {
+class DefaultStyleSettings(strokeRandom: Random = Random.Default) : StyleSettings {
     private val brush: Brush = DefaultBrush(
         colorSource = RandomColor(
-            hue = UniformDistribution(),
+            hue = UniformDistribution(random = strokeRandom),
             saturation = ConstantDistribution(1f),
-            value = PowerDistribution(exponent = STROKE_BRIGHTNESS_EXPONENT),
+            value = PowerDistribution(exponent = STROKE_BRIGHTNESS_EXPONENT, random = strokeRandom),
         ),
     )
     private val backgroundColor: ColorSource = ConstantColor(Color.White)

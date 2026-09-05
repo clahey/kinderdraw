@@ -63,18 +63,21 @@ via `-s/--serial` or `$ANDROID_SERIAL`, plus a filename prefix. It never
 hardcodes AVD names, which are local to each machine:
 
 ```
-./screenshots.py -s <phone-serial>  capture shot-       # 1080x1920 phone
-./screenshots.py -s <tablet-serial> capture tablet7-    # 7" tablet
+./screenshots.py -s <phone-serial>  --seed banana capture shot-      # 1080x1920 phone
+./screenshots.py -s <tablet-serial> --seed banana capture tablet7-   # 7" tablet
 # or: ANDROID_SERIAL=<serial> ./screenshots.py capture shot-
 ```
+
+Record the seed alongside the shots — it is what regenerates them later.
 
 Each `capture` run turns on the clean status bar, then for each scribble
 force-stops the app, relaunches, draws, and shoots. Shots land in
 `docs/store-listing/screenshots/` (override with `OUT_DIR=...`).
 
 Primitives for manual/one-off use, all taking `-s <serial>` or
-`$ANDROID_SERIAL`: `clear`, `launch`, `demo on|off`, `draw <scribble>`,
-`shot <name.png>`, and `scribbles` (lists what can be drawn; needs no device).
+`$ANDROID_SERIAL`: `clear`, `launch` (honors `--seed`), `demo on|off`,
+`draw <scribble>`, `shot <name.png>`, and `scribbles` (lists what can be drawn;
+needs no device).
 
 ## Clearing the canvas
 
@@ -82,17 +85,30 @@ Primitives for manual/one-off use, all taking `-s <serial>` or
 survives rotation and backgrounding by design (see the Painting LLD's Lifecycle
 Survival) but not a force-stop, so this is enough and no `pm clear` is needed.
 
-## Stroke colour is random, and screenshots are not reproducible
+## Fixing the colours with a seed
 
-Every stroke resolves a fresh random colour from `DefaultStyleSettings`, so two
-runs of the same scribble produce differently coloured drawings. Geometry
-repeats; colour does not. Today the answer is to re-run until the palette looks
-good.
+Every stroke resolves a fresh random colour, so by default two runs of the same
+scribble come out differently coloured. Pass `--seed` to fix them:
 
-`UniformDistribution` and `PowerDistribution` already accept an injected
-`Random`, so a debug-only seed would be a small change at a seam that exists —
-only `DefaultStyleSettings` hardcodes `Random.Default`. That is product code and
-belongs on the arrow, so it is not done here.
+```
+./screenshots.py -s <serial> --seed banana capture shot-
+```
+
+Any word works — the app hashes whatever it is given (see the User Experience
+LLD's Seeding the Sampled Colors). Words are worth preferring over numbers
+because a seed's whole job is to be written down next to an approved screenshot
+and typed back in months later.
+
+Each shot in a `capture` run gets its own derived seed (`<seed>-<scribble>`), so
+the set is reproducible without every shot opening on the same colour.
+
+**Colours reproduce exactly; geometry does not, quite.** Two runs at the same
+seed produce the same colours, verified, but touch delivery timing varies a
+little, so a stroke picks up marginally different points and antialiased edges
+shift. Expect shots that are visually identical and differ in a fraction of a
+percent of pixels — fine for a listing, not a basis for byte-comparison.
+
+To re-roll, just pass a different seed; no rebuild is involved.
 
 ## Maintaining the scribbles
 
