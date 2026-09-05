@@ -11,6 +11,10 @@
   load-bearing: see the Publishing LLD's Store Listing Assets before touching
   any path data.
 
+  The field gradient's stops deliberately differ from ic_launcher_background.xml's.
+  That canvas is masked down to its central 72x72 and this one is not, so matching
+  the two files' hex would make them render differently — same section explains.
+
   Full-bleed square with no rounding of its own: Play applies its own corner
   masking. Nothing here is transparent, but the export still carries a fully
   opaque alpha channel, because Play specifies 32-bit for this asset — it is
@@ -26,7 +30,14 @@
      width="512" height="512"
      viewBox="0 0 108 108">
 
-  <rect x="0" y="0" width="108" height="108" fill="#04325C"/>
+  <defs>
+    <linearGradient id="field" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="108">
+      <stop offset="0" stop-color="#065196"/>
+      <stop offset="1" stop-color="#043868"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="108" height="108" fill="url(#field)"/>
 
   <path d="M30,60 C24,40 42,26 58,30 C71.5,33.5 79.5,47 74,58.25"
         fill="none" stroke="#47AADC" stroke-width="9"
