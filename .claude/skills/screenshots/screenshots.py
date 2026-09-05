@@ -40,6 +40,7 @@ from pathlib import Path
 
 PKG: str = "net.clahey.kinderdraw"
 ACTIVITY: str = f"{PKG}/.MainActivity"
+EXTRA_RANDOM_SEED: str = "net.clahey.kinderdraw.extra.RANDOM_SEED"
 SCRIPT_DIR: Path = Path(__file__).resolve().parent
 REPO_ROOT: Path = SCRIPT_DIR.parents[2]  # .claude/skills/screenshots -> repo root
 OUT_DIR: Path = Path(os.environ.get("OUT_DIR") or REPO_ROOT / "docs/store-listing/screenshots")
@@ -203,13 +204,20 @@ def demo(adb: Adb, state: str) -> None:
         print("Demo mode off.")
 
 
-def launch(adb: Adb) -> None:
+def launch(adb: Adb, seed: str | None = None) -> None:
+    """Start the app, optionally fixing the colors it will draw.
+
+    The seed goes over as a string extra and the app hashes it, so seeds can be
+    words. A word survives being written down next to an approved screenshot in
+    a way a large signed number does not.
+    """
     adb.require()
+    extra = ("--es", EXTRA_RANDOM_SEED, seed) if seed else ()
     # -W blocks until the first frame is actually displayed. Without it a cold start
     # returns immediately and an early screencap catches an unpainted (blank) frame.
-    adb.shell("am", "start", "-W", "-n", ACTIVITY, capture=True)
+    adb.shell("am", "start", "-W", "-n", ACTIVITY, *extra, capture=True)
     time.sleep(1)
-    print(f"Launched {PKG}.")
+    print(f"Launched {PKG}" + (f" with seed '{seed}'." if seed else "."))
 
 
 def shot(adb: Adb, name: str) -> None:
@@ -219,18 +227,22 @@ def shot(adb: Adb, name: str) -> None:
     print(f"saved -> {OUT_DIR / name}")
 
 
-def capture(adb: Adb, prefix: str) -> None:
+def capture(adb: Adb, prefix: str, seed: str | None = None) -> None:
     """The whole shot set for one device.
 
     Every shot is the same screen with a different drawing on it — that is all
     the app has today. Each starts from a force-stop so no drawing bleeds into
     the next.
+
+    Each shot gets its own seed, derived from the run's seed and the scribble's
+    name, so the set is reproducible without every shot opening on the same
+    color. Re-run with the same `--seed` to regenerate an approved set exactly.
     """
     print(f"== capturing on {adb.serial} (prefix '{prefix}') ==")
     demo(adb, "on")
     for index, name in enumerate(("scribble", "spiral", "busy", "single"), start=1):
         clear(adb)
-        launch(adb)
+        launch(adb, seed=f"{seed}-{name}" if seed else None)
         draw(adb, name)
         time.sleep(1)  # let the last MOVE render before grabbing the frame
         shot(adb, f"{prefix}{index:02d}-{name}.png")
@@ -241,6 +253,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="KinderDraw Play Store screenshot capture.")
     p.add_argument("-s", "--serial", default=os.environ.get("ANDROID_SERIAL"),
                    help="device serial from `adb devices` (default: $ANDROID_SERIAL)")
+    p.add_argument("--seed", help="fix the colors drawn; any word. Omit for fresh colors each run")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("clear")
     sub.add_parser("launch")
@@ -262,11 +275,11 @@ def main() -> None:
     adb = Adb(a.serial)
     actions = {
         "clear": lambda: clear(adb),
-        "launch": lambda: launch(adb),
+        "launch": lambda: launch(adb, a.seed),
         "demo": lambda: demo(adb, a.state),
         "draw": lambda: draw(adb, a.name),
         "shot": lambda: shot(adb, a.name),
-        "capture": lambda: capture(adb, a.prefix),
+        "capture": lambda: capture(adb, a.prefix, a.seed),
     }
     try:
         actions[a.cmd]()
