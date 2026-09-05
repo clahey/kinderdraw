@@ -35,3 +35,12 @@
 
 - [D] **CANVAS-UX-017**: When a color swatch is activated, the system shall write that color into `StyleSettings` as the color for the next resolved brush instance, so Painting's next stroke starts in the new color with no separate acknowledgment step.
 - [D] **CANVAS-UX-018**: The system shall provide no feedback for the New Picture sequence beyond the cleared canvas itself — no confirmation banner or toast.
+
+## Seeding the Sampled Colors
+
+- [x] **CANVAS-UX-045**: When the kid canvas is launched by an intent carrying a `net.clahey.kinderdraw.extra.RANDOM_SEED` extra, the system shall seed every random draw the kid canvas makes from that extra, taking its numeric value when it holds a number and its hash otherwise — so a seed may be given as a number or as a word, without the sender having to match a declared type.
+- [x] **CANVAS-UX-046**: When the kid canvas is launched by an intent carrying no `net.clahey.kinderdraw.extra.RANDOM_SEED` extra, the system shall leave the kid canvas's randomness unseeded, so that repeated launches produce different colors.
+- [x] **CANVAS-UX-047**: The system shall give each source of randomness on the kid canvas a name, and derive that source's generator from the seed of CANVAS-UX-045 combined with that name, so that the draws one source makes cannot change the values any other source produces.
+- [x] **CANVAS-UX-048**: When the OS recreates the kid canvas's UI within its own saved-instance-state mechanism, the system shall start each named source on the next stream its seed generator yields, rather than resuming the stream that was in progress — leaving the colors of strokes already on the canvas untouched, which Painting Style restores independently under CANVAS-STYLE-017.
+- [x] **CANVAS-UX-049**: Across a recreation under CANVAS-UX-048, the system shall preserve for each named source only the number of times that source has been started, and shall reconstruct the source by advancing its seed generator that many times — retaining no other generator state.
+- [x] **CANVAS-UX-050**: Given the same seed, the same sequence of stroke starts, New Picture operations, and recreations, the system shall color the resulting drawing identically on every repetition. Colors are drawn in the order strokes start (CANVAS-PAINT-001 resolves a stroke's brush at pointer-down), so the guarantee extends to concurrent strokes only as far as that order is itself determined — two pointers going down within one input event have no specified order between them, and may exchange colors between repetitions.

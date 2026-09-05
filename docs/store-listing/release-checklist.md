@@ -25,13 +25,14 @@ ImageMagick is needed separately for the alpha and format handling below.
 - [x] `release` build type, signed when credentials are present — see section 4
 - [x] `PRIVACY.md` written
 - [x] Contact address in `PRIVACY.md`
-- [ ] Merge PR #16 to main, then bring main into this branch — the beta should
-      carry the interaction lock and the New Picture fixes, and `docs/brand.md`
-      arrives with it
+- [x] `PRIVACY.md` public at the URL Play's listing will point at:
+      <https://github.com/clahey/kinderdraw/blob/main/PRIVACY.md>. It has to keep
+      resolving for as long as the listing lives, which is why it hangs off `main`
 - [ ] Confirm `versionName` / `versionCode` for the first upload
-- [ ] **(you)** Push, and take the GitHub URL of `PRIVACY.md` — that URL is what
-      Play's listing points at, so it must resolve on a branch that will keep
-      existing
+
+The beta cuts from `main` and carries whatever has merged when the steps below
+are done; no feature gates it, and none is waited for — see the Publishing LLD's
+decision on what the first closed beta contains.
 
 ## 3. Store assets
 
