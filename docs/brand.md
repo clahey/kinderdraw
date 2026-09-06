@@ -13,19 +13,24 @@ here, and reference this file everywhere else.
 |---|---|---|
 | Brand light blue | `#47AADC` | Gradient start / accent |
 | Brand dark navy | `#04325C` | Gradient end / primary brand seed |
+| Brand light navy | `#0757A1` | The brand dark navy at 175% brightness (V), same hue and saturation — the light end of the launcher icon's field gradient |
 | Brand yellow | `#FCD214` | Highlight — the one branded detail meant to draw the eye, not a fill area |
 | Brand darker yellow | `#EBC413` | The brand yellow at 92% brightness (V), same hue and saturation — for warm accents on light surfaces where the bright yellow washes out |
 | Brand green | `#148244` | Positive/privacy accent |
 
 ## Kinderdraw's use of the palette
 
-Unlike Trackr, kinderdraw doesn't have a mark of its own built from this
-palette yet — no gradient, no distinguishing per-app treatment. Today's only
-use is New Picture's sun icon, in brand yellow, on the button's own neutral
-gray chrome (see the Widgets LLD's Control Catalog) — per the palette table
-above, yellow specifically stays a highlight rather than a fill; that's not
-a constraint on the rest of the palette, which later controls are free to
-use more broadly (a fill, a background, whatever the control calls for).
+Kinderdraw's mark is the app icon: a childlike scribble in brand light blue and
+brand green ending in a brand yellow dot, on a field that ramps from brand light
+navy down to brand dark navy. The Publishing LLD's Store Listing Assets says
+what the mark means and which of its properties are load-bearing.
+
+The only other use so far is New Picture's sun icon, in brand yellow, on the
+button's own neutral gray chrome (see the Widgets LLD's Control Catalog) — per
+the palette table above, yellow specifically stays a highlight rather than a
+fill; that's not a constraint on the rest of the palette, which later controls
+are free to use more broadly (a fill, a background, whatever the control calls
+for).
 
 ## Keeping copies in sync
 
