@@ -35,6 +35,13 @@ class MediaStoreImageStorage(private val context: Context) : ImageStorage {
      * case-insensitively for ASCII — the album directory can be recorded
      * under any casing and every spelling names the same directory. `LIKE`'s
      * own wildcards are escaped so the pattern still matches literally.
+     *
+     * This is not protection against injection: the pattern is bound as a
+     * query parameter, so it is never parsed as SQL whatever it contains.
+     * Escaping here only keeps `%` and `_` from behaving as wildcards. Nor
+     * does it currently do anything — [albumRelativePath] is built from
+     * compile-time constants and holds none of those characters — so it
+     * stands guard over a path that could gain one later.
      */
     private val albumPathPattern = albumRelativePath
         .replace("\\", "\\\\")
