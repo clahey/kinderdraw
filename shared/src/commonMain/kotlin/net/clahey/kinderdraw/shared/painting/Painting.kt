@@ -16,10 +16,9 @@ import net.clahey.kinderdraw.shared.userexperience.swallowGesture
 /**
  * Owns pointer input for a drawing — see the Painting LLD's Composable
  * Shape. Converts whatever pointer stream Compose delivers to it into calls
- * against [state]. It takes [lock] for the span of its own gesture and
- * observes nothing else about the screen: a refusal means some other
- * component is mid-gesture, and Painting simply starts nothing (see the
- * Painting LLD's Holding the Interaction).
+ * against [state]. It takes [lock] for the span of its own gesture: a refusal
+ * means some other component is mid-gesture, and Painting simply starts
+ * nothing (see the Painting LLD's Holding the Lock).
  */
 @Composable
 fun Painting(
@@ -41,8 +40,8 @@ fun Painting(
                             val event = awaitPointerEvent()
                             // Only a touch-down starts a gesture worth asking
                             // about: a hovering pointer must never take the
-                            // interaction, and a pointer joining a gesture
-                            // already held needs no second request.
+                            // lock, and a pointer joining a gesture already
+                            // held needs no second request.
                             // @spec CANVAS-PAINT-018, CANVAS-PAINT-022
                             if (hold == null && event.changes.any { it.changedToDownIgnoreConsumed() }) {
                                 hold = lock.tryAcquire()

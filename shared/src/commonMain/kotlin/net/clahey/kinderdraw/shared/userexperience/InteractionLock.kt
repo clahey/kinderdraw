@@ -9,8 +9,8 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
  * its own gesture begins, and one that's refused starts nothing and swallows
  * the rest of that gesture ([swallowGesture]).
  *
- * There is deliberately no `release` here: acquiring returns the [Hold] that
- * ends it, so a component can't release a hold it never acquired.
+ * Release goes through the [Hold] that acquiring returned, never through the
+ * lock itself, so a component can only end a hold it is actually holding.
  *
  * Confined to the UI dispatcher, which is where Compose delivers pointer
  * events and where every holder's release resumes, so it carries no
