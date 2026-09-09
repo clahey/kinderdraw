@@ -144,7 +144,7 @@ class KidButtonTest {
         shown = false
         waitForIdle()
 
-        assertNotNull(lock.tryAcquire(), "an activation that never completed must not strand the interaction")
+        assertNotNull(lock.tryAcquire(), "an activation that never completed must not strand the hold")
     }
 
     // @spec CANVAS-WIDGETS-025
@@ -170,7 +170,7 @@ class KidButtonTest {
         shown = false
         waitForIdle()
 
-        assertNotNull(lock.tryAcquire(), "a cancelled press must not strand the interaction")
+        assertNotNull(lock.tryAcquire(), "a cancelled press must not strand the hold")
     }
 
     // @spec CANVAS-WIDGETS-026

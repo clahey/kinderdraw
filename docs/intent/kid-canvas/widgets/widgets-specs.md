@@ -2,7 +2,7 @@
 
 ## Hit-Testing and Activation
 
-- [x] **CANVAS-WIDGETS-001**: When a pointer touches down inside a control's hit region and the interaction lock grants that control the interaction, the system shall claim that pointer for that control, fixed for the remainder of that pointer's gesture.
+- [x] **CANVAS-WIDGETS-001**: When a pointer touches down inside a control's hit region and the interaction lock grants that control a hold, the system shall claim that pointer for that control, fixed for the remainder of that pointer's gesture.
 - [ ] **CANVAS-WIDGETS-002**: When a pointer's initial down location falls outside every control's hit region, the system shall not claim that pointer for a control even if it's later dragged into one — only an initial down inside a region claims it.
 - [ ] **CANVAS-WIDGETS-003**: Once a pointer is claimed by a control, the system shall not reassign it to a different control even if the pointer is dragged into that other control's hit region.
 - [x] **CANVAS-WIDGETS-004**: When a control claims a pointer, the system shall show that control's press feedback immediately, regardless of whether the pointer's eventual release activates the control.
@@ -16,7 +16,7 @@
 
 - [x] **CANVAS-WIDGETS-012**: When a control activates (per Hit-Testing and Activation), the system shall invoke that control's `onActivate` callback exactly once, at the same release that activated it.
 - [x] **CANVAS-WIDGETS-013**: When a control's claimed pointer is released without activating it, the system shall not invoke that control's `onActivate` callback.
-- [x] **CANVAS-WIDGETS-014**: A control with multiple independent hit regions (e.g. Color Picker's swatches) shall claim, show press feedback, and report `onActivate` independently per region, scoped only to the pointer claimed by that specific region. Independence is about which region a pointer belongs to, not about concurrency: at most one region may hold the interaction at a time, so two regions can never be pressed at once (see CANVAS-UX-004).
+- [x] **CANVAS-WIDGETS-014**: A control with multiple independent hit regions (e.g. Color Picker's swatches) shall claim, show press feedback, and report `onActivate` independently per region, scoped only to the pointer claimed by that specific region. Independence is about which region a pointer belongs to, not about concurrency: at most one region may hold the lock at a time, so two regions can never be pressed at once (see CANVAS-UX-004).
 - [x] **CANVAS-WIDGETS-023**: The system shall expose a control's press state only to that control's own rendering, reporting it to no caller.
 - [x] **CANVAS-WIDGETS-026**: When a control's claimed press ends — whether by the pointer being released or by the press being cancelled — the system shall end that control's press feedback, regardless of whether it activated the control. Where the cancellation removes the control itself there is nothing left to render; this binds on the cancellations a control outlives.
 - [x] **CANVAS-WIDGETS-027**: When a control's claimed press is cancelled — the control leaving composition, or its pointer input being reset, while the pointer is still down — the system shall not activate that control, regardless of where the pointer was positioned or how long it had been inside the hit region.
@@ -24,12 +24,12 @@
 
 ## Interaction Arbitration Contract
 
-- [x] **CANVAS-WIDGETS-018**: When a pointer touches down inside a control's hit region, the system shall request the interaction from the interaction lock that control was given, before claiming that pointer.
-- [x] **CANVAS-WIDGETS-019**: When the interaction lock refuses a control's request, the system shall not claim that pointer, shall show no press feedback for it, and shall consume that gesture's remaining pointer events without requesting the interaction again, until every pointer of that gesture has lifted.
-- [x] **CANVAS-WIDGETS-020**: While a control holds the interaction, that control shall ignore every pointer other than the one it claimed, for the remainder of that gesture — a pointer arriving at a different control is refused by the lock under CANVAS-WIDGETS-019 instead.
-- [x] **CANVAS-WIDGETS-021**: When a control's claimed pointer is released without activating it, the system shall release that control's hold on the interaction at that release.
-- [x] **CANVAS-WIDGETS-022**: When a control's claimed pointer is released and activates it, the system shall keep that control's hold on the interaction until the `onActivate` invocation completes, and shall release it then whether that invocation returned normally, failed, or was cancelled — including an invocation cancelled before it ever began running, which shall release the hold exactly as one cancelled midway does.
-- [x] **CANVAS-WIDGETS-025**: When a control's own gesture is cancelled while it holds the interaction, the system shall release that hold.
+- [x] **CANVAS-WIDGETS-018**: When a pointer touches down inside a control's hit region, the system shall request a hold from the interaction lock that control was given, before claiming that pointer.
+- [x] **CANVAS-WIDGETS-019**: When the interaction lock refuses a control's request, the system shall not claim that pointer, shall show no press feedback for it, and shall consume that gesture's remaining pointer events without requesting a hold again, until every pointer of that gesture has lifted.
+- [x] **CANVAS-WIDGETS-020**: While a control holds the lock, that control shall ignore every pointer other than the one it claimed, for the remainder of that gesture — a pointer arriving at a different control is refused by the lock under CANVAS-WIDGETS-019 instead.
+- [x] **CANVAS-WIDGETS-021**: When a control's claimed pointer is released without activating it, the system shall release that control's hold at that release.
+- [x] **CANVAS-WIDGETS-022**: When a control's claimed pointer is released and activates it, the system shall keep that control's hold until the `onActivate` invocation completes, and shall release it then whether that invocation returned normally, failed, or was cancelled — including an invocation cancelled before it ever began running, which shall release the hold exactly as one cancelled midway does.
+- [x] **CANVAS-WIDGETS-025**: When a control's own gesture is cancelled while it holds the lock, the system shall release that hold.
 
 ## Control Catalog
 

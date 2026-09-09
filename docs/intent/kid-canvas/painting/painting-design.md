@@ -7,9 +7,9 @@ prefix: CANVAS-PAINT
 
 ## Context and Design Philosophy
 
-Painting is a `@Composable` that owns its own pointer input: it converts whatever pointer stream Compose delivers to it into stroke data, renders it to the drawing surface as it happens, and holds the accumulated drawing until User Experience asks it to save or clear. Per the User Experience LLD's Input Arbitration, Painting only ever receives a pointer that didn't land on any Widgets control — Widgets is composed on top of Painting, and Painting covers the full screen beneath it, so a touch inside no control's hit region simply falls through to Painting's own pointer input, the same ordinary Compose dispatch Widgets' own hit-testing relies on. Painting doesn't arbitrate input itself and doesn't know about Widgets; it takes the screen's `InteractionLock` for the span of its own gesture and observes nothing about the rest of the screen beyond whether that lock refused it (see Composable Shape and Holding the Interaction).
+Painting is a `@Composable` that owns its own pointer input: it converts whatever pointer stream Compose delivers to it into stroke data, renders it to the drawing surface as it happens, and holds the accumulated drawing until User Experience asks it to save or clear. Per the User Experience LLD's Input Arbitration, Painting only ever receives a pointer that didn't land on any Widgets control — Widgets is composed on top of Painting, and Painting covers the full screen beneath it, so a touch inside no control's hit region simply falls through to Painting's own pointer input, the same ordinary Compose dispatch Widgets' own hit-testing relies on. Painting doesn't arbitrate input itself and doesn't know about Widgets; it takes the screen's `InteractionLock` for the span of its own gesture and observes nothing about the rest of the screen beyond whether that lock refused it (see Composable Shape and Holding the Lock).
 
-Multiple pointers can hold their own live strokes at once: each pointer that starts drawing gets its own independently tracked stroke, keyed by that pointer's identity, so several fingers touching the canvas concurrently each leave their own mark rather than only the first being recognized. Arbitration only ever decides whether Painting may begin a gesture at all; once Painting holds the interaction, nothing limits how many pointers it may draw concurrently within that gesture (see the User Experience LLD's Input Arbitration).
+Multiple pointers can hold their own live strokes at once: each pointer that starts drawing gets its own independently tracked stroke, keyed by that pointer's identity, so several fingers touching the canvas concurrently each leave their own mark rather than only the first being recognized. Arbitration only ever decides whether Painting may begin a gesture at all; once Painting holds the lock, nothing limits how many pointers it may draw concurrently within that gesture (see the User Experience LLD's Input Arbitration).
 
 This is the component the HLD's Compose Multiplatform sharing decision is about: the touch-to-stroke logic and its on-screen rendering are the same implementation across Android and Linux (and iOS later), not just specs kept in sync by convention.
 
@@ -23,9 +23,9 @@ Because every layer of state that changes as a stroke progresses is Compose-obse
 
 `isEmpty()`, `save()`, and `clear()` remain `PaintingState`'s own operations, called directly by whoever holds the state — today, `KidCanvasScreen`; eventually User Experience — via `remember { PaintingState(styleSettings) }`, passing that same instance to both the `Painting` composable and its own lifecycle calls. They aren't routed through the composable, which only ever forwards pointer events into the state it's given.
 
-## Holding the Interaction
+## Holding the Lock
 
-Painting asks the `InteractionLock` it was given for the interaction when a gesture begins — an input event carrying a pointer newly down while Painting holds nothing (see Composable Shape for what a gesture spans, and the User Experience LLD's Input Arbitration for why the test is a touch-down rather than any event) — and releases it when that gesture ends, its last remaining pointer lifting. A second, third, or later pointer joining or leaving an already-live gesture asks nothing and releases nothing: the whole multi-pointer span is one hold.
+Painting asks the `InteractionLock` it was given for a hold when a gesture begins — an input event carrying a pointer newly down while Painting holds nothing (see Composable Shape for what a gesture spans, and the User Experience LLD's Input Arbitration for why the test is a touch-down rather than any event) — and releases it when that gesture ends, its last remaining pointer lifting. A second, third, or later pointer joining or leaving an already-live gesture asks nothing and releases nothing: the whole multi-pointer span is one hold.
 
 When the lock refuses, Painting's loop never runs, so no stroke is started and nothing reaches `PaintingState` to be undone; the gesture is swallowed to its last pointer's lift.
 
@@ -124,11 +124,11 @@ Restoring the drawing never invokes `save()` — routine lifecycle churn shouldn
 
 ### Resolved
 
-1. ✅ Painting is a hoisted-state Compose pattern — `PaintingState` holds Compose-observable snapshot state, and a thin `@Composable fun Painting(...)` wrapper owns pointer input and takes the interaction lock for its own gesture. See Composable Shape and Holding the Interaction.
+1. ✅ Painting is a hoisted-state Compose pattern — `PaintingState` holds Compose-observable snapshot state, and a thin `@Composable fun Painting(...)` wrapper owns pointer input and takes the interaction lock for its own gesture. See Composable Shape and Holding the Lock.
 2. ✅ A resolved brush's color can change automatically between strokes, without a new toddler tap — Painting's read-once-per-stroke behavior already accommodated this either way, and User Experience's `StyleSettings` implementation now does exactly this via `RandomColor`. See the User Experience LLD's Interaction Feedback.
 3. ✅ `Point` moved into Painting Style, and `StyleSettings`' accessors were renamed `getActiveBrush()`/`getActiveBackground()` — see the Painting Style LLD's Point and Style Settings sections.
 4. ✅ `PaintingState` survives OS-driven recreation (configuration change, brief backgrounding, and process death, treated uniformly) via `rememberSaveable` with a custom `Saver`. See Lifecycle Survival and Decisions & Alternatives.
-5. ✅ Painting tracks multiple concurrent live strokes (true multi-touch drawing), keyed by pointer — several fingers touching the canvas at once each get their own independently tracked stroke, rather than only the first pointer being recognized. See Stroke Model, Holding the Interaction, and Decisions & Alternatives.
+5. ✅ Painting tracks multiple concurrent live strokes (true multi-touch drawing), keyed by pointer — several fingers touching the canvas at once each get their own independently tracked stroke, rather than only the first pointer being recognized. See Stroke Model, Holding the Lock, and Decisions & Alternatives.
 
 ### Deferred
 

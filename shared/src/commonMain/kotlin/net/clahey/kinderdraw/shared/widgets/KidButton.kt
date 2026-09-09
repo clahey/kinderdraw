@@ -32,7 +32,7 @@ private val MIN_TOUCH_TARGET_DP = 64.dp
  * render its own visual feedback (see the LLD's Open Questions — exact
  * appearance isn't fixed here); the press state goes nowhere else.
  *
- * The control asks [lock] for the interaction before claiming a pointer and
+ * The control asks [lock] for a hold before claiming a pointer and
  * holds it until its own gesture is over — through [onActivate]'s own work
  * for a release that activates (see the LLD's Interaction Arbitration
  * Contract). Its hit region is also registered with the platform as excluded
@@ -105,8 +105,8 @@ fun KidButton(
                             }
                         }
                         // The activation runs in the composition's scope, not
-                        // this pointer-event one, and keeps the interaction
-                        // until it finishes however it finishes.
+                        // this pointer-event one, and keeps the hold until it
+                        // finishes however it finishes.
                         // @spec CANVAS-WIDGETS-022, CANVAS-WIDGETS-024
                         if (activated) {
                             releaseOnExit = false
@@ -114,7 +114,7 @@ fun KidButton(
                             // from inside it: a coroutine whose scope is
                             // already cancelled never runs its body at all,
                             // and a `finally` in a body that never ran would
-                            // strand the interaction.
+                            // strand the hold.
                             scope.launch { currentOnActivate() }
                                 .invokeOnCompletion { hold.release() }
                         }

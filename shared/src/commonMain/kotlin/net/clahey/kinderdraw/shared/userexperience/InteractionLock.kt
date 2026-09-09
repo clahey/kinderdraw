@@ -5,12 +5,12 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 
 /**
  * The kid canvas's arbiter — see the User Experience LLD's Input Arbitration.
- * At most one component holds the interaction at a time; a component asks for
- * it when its own gesture begins, and one that's refused starts nothing and
- * swallows the rest of that gesture ([swallowGesture]).
+ * At most one component holds it at a time; a component asks for a [Hold] when
+ * its own gesture begins, and one that's refused starts nothing and swallows
+ * the rest of that gesture ([swallowGesture]).
  *
  * There is deliberately no `release` here: acquiring returns the [Hold] that
- * ends it, so a component can't release an interaction it never acquired.
+ * ends it, so a component can't release a hold it never acquired.
  *
  * Confined to the UI dispatcher, which is where Compose delivers pointer
  * events and where every holder's release resumes, so it carries no
@@ -21,7 +21,7 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 class InteractionLock {
     private var holder: Hold? = null
 
-    /** The hold, or null if another component already has the interaction. */
+    /** The hold, or null if another component already holds this lock. */
     fun tryAcquire(): Hold? = if (holder != null) null else Hold(this).also { holder = it }
 
     // @spec CANVAS-UX-022
@@ -29,11 +29,11 @@ class InteractionLock {
         if (holder === hold) holder = null
     }
 
-    /** One granted interaction, held until [release]. */
+    /** One grant of the lock, held until [release]. */
     class Hold internal constructor(private val lock: InteractionLock) {
         /**
          * Ends this hold. Releasing an already-released hold does nothing —
-         * in particular it never frees a later holder's interaction.
+         * in particular it never frees a later holder's.
          */
         fun release() = lock.releaseIfHolder(this)
     }
