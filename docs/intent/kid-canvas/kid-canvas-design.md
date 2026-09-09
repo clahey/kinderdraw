@@ -13,7 +13,7 @@ The primary drawing surface can't use standard platform UI conventions anywhere 
 
 Kid Canvas is composed of four components:
 
-- **Widgets** — implements the KidWidgets library: raw-pointer-driven controls (buttons, color picker, and similar chrome) that replace `clickable()`/Material gesture recognizers, so hit-testing and activation are fully custom-built for toddler motor control.
+- **Widgets** — implements the KidWidgets library. A **KidWidget** is one raw-pointer-driven control (a button, a color-picker swatch, and similar chrome) that replaces `clickable()`/Material gesture recognizers, so hit-testing and activation are fully custom-built for toddler motor control. "KidWidget" names the on-screen object, distinguishing it from the drawing surface Painting owns, which is not one.
 - **User Experience** — composes Widgets into the on-screen chrome and hosts Painting as the drawing surface; owns overall screen behavior — which features are active (read from the shared UX config), non-interrupting lifecycle behavior (auto-save-then-clear on a new picture), and interaction feedback.
 - **Painting** — converts a pointer/touch sequence into stroke data and renders it to the drawing surface, delegating a stroke's actual visual rendering to a Painting Style brush.
 - **Painting Style** — defines what a stroke or the canvas background looks like: pluggable brush shapes, and color sources (fixed or algorithmically varied) that produce the colors a brush or background renders with.

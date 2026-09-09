@@ -9,9 +9,9 @@
 - [x] **CANVAS-UX-002**: When a pointer touches down inside some KidWidget's hit region and the lock is unheld, the system shall grant a hold to that KidWidget, which claims the pointer.
 - [x] **CANVAS-UX-003**: When a pointer touches down outside every KidWidget's hit region, and the lock is either unheld or held by Painting itself, the system shall route that pointer to Painting instead, starting a stroke — even when the touch missed a nearby KidWidget's hit region.
 - [x] **CANVAS-UX-004**: While the lock is held, the system shall refuse every further request until it's released, so no other KidWidget can claim a pointer and no stroke can start on Painting.
-- [x] **CANVAS-UX-005**: When a component is refused a hold, the system shall keep that refusal in force for the remainder of that component's gesture — a pointer already down when the holder releases stays inert until it lifts and touches down again, and only a subsequent pointer-down is eligible to start the next gesture.
-- [x] **CANVAS-UX-020**: The system shall grant a hold to at most one component at a time, refusing every request made while one is held.
-- [x] **CANVAS-UX-021**: The system shall provide no way to release a hold other than through the hold object a successful request returned, so a component that never acquired one cannot release it. This is a property of the type's surface rather than of its behavior, so it carries no test: violating it would fail to compile.
+- [x] **CANVAS-UX-005**: When a request for a hold is refused, the system shall keep that refusal in force for the remainder of the refused gesture — a pointer already down when the holder releases stays inert until it lifts and touches down again, and only a subsequent pointer-down is eligible to start the next gesture.
+- [x] **CANVAS-UX-020**: The system shall grant a hold to at most one requester at a time, refusing every request made while one is held.
+- [x] **CANVAS-UX-021**: The system shall provide no way to release a hold other than through the hold object a successful request returned, so anything that never acquired one cannot release it. This is a property of the type's surface rather than of its behavior, so it carries no test: violating it would fail to compile.
 - [x] **CANVAS-UX-022**: When a hold that has already been released is released again, the system shall leave the lock's current holder unchanged, so a stale hold cannot free a later holder's.
 - [x] **CANVAS-UX-023**: The system shall request and release a hold only from the UI dispatcher, and shall carry no synchronization of its own. A KidWidget's release after a suspending activation satisfies this by running in a composition-tied scope — see CANVAS-WIDGETS-024. Being an invariant over every call site rather than a triggered behavior, this carries no test of its own; each call site's own tests exercise it.
 - [x] **CANVAS-UX-024**: When the kid canvas screen is composed, including after an OS-driven recreation, the system shall start with the lock unheld rather than restoring any hold in effect beforehand.
@@ -20,7 +20,7 @@
 
 ## Feature Gating
 
-- [D] **CANVAS-UX-006**: When composing the screen, the system shall include only the Widgets controls and optional behaviors whose backing feature Config resolves as on, omitting the rest entirely rather than rendering them disabled.
+- [D] **CANVAS-UX-006**: When composing the screen, the system shall include only the KidWidgets and optional behaviors whose backing feature Config resolves as on, omitting the rest entirely rather than rendering them disabled.
 - [D] **CANVAS-UX-007**: The system shall gate today's canvas feature set (color picker, New Picture) as a single bundle, resolved as one unit rather than per-feature.
 - [D] **CANVAS-UX-008**: When Config's resolved feature values change while a gesture is live, the system shall defer applying the resulting composition change until that gesture ends, rather than recomposing mid-gesture.
 
