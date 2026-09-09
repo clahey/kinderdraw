@@ -48,7 +48,7 @@ Both are built on the same underlying raw-pointer hit-testing and activation pri
 
 ## Interaction Arbitration Contract
 
-Widgets doesn't arbitrate against Painting itself, and doesn't know Painting or strokes exist. Each control takes an `InteractionLock` — defined and owned by User Experience, which creates one per screen (see its Input Arbitration section) — asks it for a hold the moment a pointer lands inside the control's hit region, before claiming that pointer:
+Widgets doesn't arbitrate against Painting itself, and doesn't know Painting or strokes exist. Each KidWidget takes an `InteractionLock` — defined and owned by User Experience, which creates one per screen (see its Input Arbitration section) — asks it for a hold the moment a pointer lands inside the control's hit region, before claiming that pointer:
 
 - **Granted.** The control claims the pointer and holds the lock until its own gesture is over: released at a release that activates nothing, and at the end of the activation's own work for one that does, the control having handed its hold to that work rather than releasing at the press. That release is unconditional on how things ended — returning normally, failing, or being cancelled all release it — so a failed action leaves the screen usable rather than locked, and no hold outlives the control that took it.
 - **Refused.** The control never claims the pointer and shows no press feedback; the gesture is consumed to its last pointer's lift. Its own press-handling doesn't run at all, so there's nothing for it to undo and nothing for it to release.
