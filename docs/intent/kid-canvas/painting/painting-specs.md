@@ -1,6 +1,6 @@
 # Painting — EARS Specs
 
-## Holding the Interaction
+## Holding the Lock
 
 - [x] **CANVAS-PAINT-018**: When a pointer touches down while no other pointer is currently down on the drawing surface, the system shall request a hold from the interaction lock it was given; when the last pointer that's currently down lifts, leaving none down, the system shall release the hold it took. A pointer touching down or lifting while at least one other pointer remains down shall neither request nor release a hold. Whether any pointer remains down shall be evaluated once per input event, after every pointer change within that event has been applied, not separately for each individual change within it — so a pointer lifting and a different pointer touching down together in the same input event doesn't spuriously end and restart the gesture.
 - [x] **CANVAS-PAINT-022**: When the interaction lock refuses Painting's request, the system shall begin no stroke and apply no pointer change to the drawing, and shall consume that gesture's remaining pointer events without requesting a hold again, until every pointer of that gesture has lifted.
