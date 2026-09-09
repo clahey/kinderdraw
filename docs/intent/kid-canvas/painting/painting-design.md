@@ -31,8 +31,6 @@ When the lock refuses, Painting's loop never runs, so no stroke is started and n
 
 The release covers every way a held gesture can end, not just the last pointer lifting: if the pointer-input loop is cancelled, whether the composable leaves composition or Compose cancels the gesture, the hold goes with it, so a hold can never outlive the strokes it covered. Strokes that are still live at that moment stay live in `PaintingState`, which is what Lifecycle Survival relies on; only the hold ends.
 
-Painting learns nothing else about the screen from the lock. It doesn't know what else might be holding it, or why, or whether anything else exists to hold it at all.
-
 ## Stroke Model
 
 A stroke is the record of one live pointer's down-to-up sequence: an ordered list of points, plus the brush active when the stroke began (read from `StyleSettings` below). That brush — including whatever color it renders with — is fixed for the stroke's whole duration. Changing the active color mid-stroke can't happen today anyway, since color selection is a Widgets control and Widgets can't receive input while any stroke is live (see the User Experience LLD's Input Arbitration) — but even if it could, an in-progress stroke wouldn't change brush or color retroactively.
