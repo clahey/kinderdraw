@@ -67,11 +67,9 @@ Repeating the save blindly is safe only because a failed write leaves nothing be
 
 A sequence that stops at a failed save leaves the toddler looking at the drawing still on the canvas and nothing else — indistinguishable from a press that never registered. That's a gap rather than an intended outcome; see Open Questions.
 
-The hold that covers this sequence (see Input Arbitration) is already taken before the sequence even starts — New Picture acquired it the moment its pointer was claimed, not at `onActivate` — and it lasts until the sequence ends, including across the asynchronous `save()` call and any retry in step 2, rather than being released at the press's own release and re-acquired here. That covers a sequence that ends early on a failed save exactly as it covers one that reaches the clear: the hold ends with the activation's own work, whatever that work concluded. No new stroke or KidWidget press can start anywhere in that window, from the initial claim through the sequence's end. This needs no special arrangement by User Experience beyond making the sequence the activation's own work: every KidWidget holds the lock until its activation finishes, and for most controls that simply completes at once.
+The whole sequence runs as New Picture's activation, so the hold its press already took covers it start to finish (see Input Arbitration's Holding).
 
-A finger resting on the canvas for the sequence's whole duration was refused at its own touch-down and stays refused (see Input Arbitration's Refusal), so it doesn't spring into a stroke the moment the sequence ends — the toddler lifts and touches again.
-
-If the screen is recreated mid-sequence — a rotation, or backgrounding that recreates the composition — the sequence is cancelled where it stands and nothing resumes it. The intended outcome is that the toddler sees no effect at all: the drawing is still on the canvas when the screen returns, surviving by the ordinary mechanism (see OS Navigation and Process Lifecycle), exactly as if New Picture had never been pressed. The hold dies with the composition that owned it, so the returning screen starts unheld.
+If the screen is recreated mid-sequence — a rotation, or backgrounding that recreates the composition — the sequence is cancelled where it stands and nothing resumes it. The intended outcome is that the toddler sees no effect at all: the drawing is still on the canvas when the screen returns, surviving by the ordinary mechanism (see OS Navigation and Process Lifecycle), exactly as if New Picture had never been pressed.
 
 ### OS Navigation and Process Lifecycle
 
