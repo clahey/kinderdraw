@@ -29,7 +29,7 @@ Painting asks the `InteractionLock` it was given for a hold when a gesture begin
 
 When the lock refuses, Painting's loop never runs, so no stroke is started and nothing reaches `PaintingState` to be undone; the gesture is swallowed to its last pointer's lift.
 
-The release covers every way a held gesture can end, not just the last pointer lifting: if the pointer-input loop is cancelled — the composable leaving composition, or Compose cancelling the gesture — the hold goes with it, so a hold can never outlive the strokes it covered. Strokes still live at that moment stay live in `PaintingState`, which is what Lifecycle Survival relies on; only the hold ends.
+The release covers every way a held gesture can end, not just the last pointer lifting: if the pointer-input loop is cancelled, whether the composable leaves composition or Compose cancels the gesture, the hold goes with it, so a hold can never outlive the strokes it covered. Strokes that are still live at that moment stay live in `PaintingState`, which is what Lifecycle Survival relies on; only the hold ends.
 
 Painting learns nothing else about the screen from the lock. It doesn't know what else might be holding it, or why, or whether anything else exists to hold it at all.
 
