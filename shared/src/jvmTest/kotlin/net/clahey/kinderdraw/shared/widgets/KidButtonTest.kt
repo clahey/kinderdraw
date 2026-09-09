@@ -18,10 +18,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import net.clahey.kinderdraw.shared.userexperience.InteractionLock
+import net.clahey.kinderdraw.shared.userexperience.isHeld
 
 private const val BUTTON_TAG = "kid-button"
 
@@ -73,13 +73,13 @@ class KidButtonTest {
         // Down inside, then dragged well away and held there long enough that
         // the release can't qualify for the stray tolerance.
         onRoot().performTouchInput { down(bounds.center) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
         onRoot().performTouchInput { moveTo(Offset(bounds.right + 200f, bounds.bottom + 200f)) }
         onRoot().performTouchInput { advanceEventTime(500); up() }
         waitForIdle()
 
         assertEquals(0, activations)
-        assertNotNull(lock.tryAcquire())
+        assertFalse(lock.isHeld())
     }
 
     // @spec CANVAS-WIDGETS-022, CANVAS-WIDGETS-024
@@ -105,11 +105,11 @@ class KidButtonTest {
         waitUntil { started.isCompleted }
 
         // The pointer is long gone, but the activation is still running.
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         proceed.complete(Unit)
         waitForIdle()
-        assertNotNull(lock.tryAcquire())
+        assertFalse(lock.isHeld())
     }
 
     // @spec CANVAS-WIDGETS-022
@@ -135,7 +135,7 @@ class KidButtonTest {
 
         onRoot().performTouchInput { down(center); up() }
         waitUntil { started.isCompleted }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         // Leaving composition cancels the still-running activation. An
         // activation that throws instead takes the same `finally`, but the
@@ -144,7 +144,7 @@ class KidButtonTest {
         shown = false
         waitForIdle()
 
-        assertNotNull(lock.tryAcquire(), "an activation that never completed must not strand the hold")
+        assertFalse(lock.isHeld(), "an activation that never completed must not strand the hold")
     }
 
     // @spec CANVAS-WIDGETS-025
@@ -164,13 +164,13 @@ class KidButtonTest {
 
         // Pointer stays down — the press is still live, and the hold with it.
         onRoot().performTouchInput { down(center) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         // Leaving composition cancels the gesture before any release.
         shown = false
         waitForIdle()
 
-        assertNotNull(lock.tryAcquire(), "a cancelled press must not strand the hold")
+        assertFalse(lock.isHeld(), "a cancelled press must not strand the hold")
     }
 
     // @spec CANVAS-WIDGETS-026
@@ -249,6 +249,6 @@ class KidButtonTest {
         onRoot().performTouchInput { up(0) }
         waitForIdle()
         assertEquals(1, activations, "the claimed pointer's own release still activates")
-        assertTrue(lock.tryAcquire() != null)
+        assertFalse(lock.isHeld())
     }
 }
