@@ -15,11 +15,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import net.clahey.kinderdraw.shared.paintingstyle.FakeBrush
 import net.clahey.kinderdraw.shared.paintingstyle.FakeStyleSettings
 import net.clahey.kinderdraw.shared.userexperience.InteractionLock
+import net.clahey.kinderdraw.shared.userexperience.isHeld
 
 @OptIn(ExperimentalTestApi::class)
 class PaintingComposableTest {
@@ -35,13 +35,13 @@ class PaintingComposableTest {
         // composable's pointer input handler once the block exits, so the
         // gesture is split across calls to observe the lock mid-gesture.
         onRoot().performTouchInput { down(Offset(10f, 10f)) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         onRoot().performTouchInput { moveTo(Offset(20f, 20f)) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         onRoot().performTouchInput { up() }
-        assertNotNull(lock.tryAcquire())
+        assertFalse(lock.isHeld())
         assertFalse(state.isEmpty())
     }
 
@@ -54,20 +54,20 @@ class PaintingComposableTest {
         setContent { Painting(state = state, lock = lock, modifier = Modifier.size(100.dp)) }
 
         onRoot().performTouchInput { down(0, Offset(10f, 10f)) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         // A second concurrent touch joins the same held gesture rather than
         // taking a hold of its own.
         onRoot().performTouchInput { down(1, Offset(80f, 80f)) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         onRoot().performTouchInput { up(0) }
         // The other finger is still down — the gesture isn't over yet.
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
         assertFalse(state.isEmpty())
 
         onRoot().performTouchInput { up(1) }
-        assertNotNull(lock.tryAcquire())
+        assertFalse(lock.isHeld())
     }
 
     // @spec CANVAS-PAINT-022
@@ -110,13 +110,13 @@ class PaintingComposableTest {
         }
 
         onRoot().performTouchInput { down(Offset(10f, 10f)) }
-        assertNull(lock.tryAcquire())
+        assertTrue(lock.isHeld())
 
         // Leaving composition cancels the pointer-input coroutine mid-gesture.
         shown = false
         waitForIdle()
 
-        assertNotNull(lock.tryAcquire())
+        assertFalse(lock.isHeld())
         // The stroke that was live stays in the state for Lifecycle Survival.
         assertFalse(state.isEmpty())
     }

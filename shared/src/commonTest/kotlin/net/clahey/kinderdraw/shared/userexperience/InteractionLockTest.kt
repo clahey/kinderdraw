@@ -19,7 +19,7 @@ class InteractionLockTest {
     @Test
     fun refusesEveryRequestMadeWhileTheInteractionIsHeld() {
         val lock = InteractionLock()
-        lock.tryAcquire()
+        assertNotNull(lock.tryAcquire())
 
         assertNull(lock.tryAcquire())
         assertNull(lock.tryAcquire())
@@ -58,21 +58,13 @@ class InteractionLockTest {
         val lock = InteractionLock()
         val stale = assertNotNull(lock.tryAcquire())
         stale.release()
-        assertNotNull(lock.tryAcquire())
+        val later = assertNotNull(lock.tryAcquire())
 
         stale.release()
 
         assertTrue(lock.isHeld())
+        // Still held by `later` specifically — its own release is what frees it.
+        later.release()
+        assertFalse(lock.isHeld())
     }
-}
-
-/**
- * Whether the lock is held, leaving it as it was found: a free lock is taken
- * and immediately released, and a held one refuses, so neither outcome
- * disturbs the holder the assertion is about.
- */
-private fun InteractionLock.isHeld(): Boolean {
-    val hold = tryAcquire() ?: return true
-    hold.release()
-    return false
 }
