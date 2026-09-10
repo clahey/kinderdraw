@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import net.clahey.kinderdraw.shared.imagestorage.MediaStoreImageStorage
 import net.clahey.kinderdraw.shared.userexperience.KidCanvasScreen
 import net.clahey.kinderdraw.shared.userexperience.seedFrom
 
@@ -19,7 +20,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            KidCanvasScreen(seed = intent.randomSeed())
+            KidCanvasScreen(
+                imageStorage = MediaStoreImageStorage(applicationContext),
+                seed = intent.randomSeed(),
+            )
         }
     }
 }

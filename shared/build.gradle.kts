@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {

@@ -34,9 +34,10 @@ for).
 
 ## Keeping copies in sync
 
-Markdown can't be imported by Kotlin, so hex values are physically duplicated
-at each place that renders them. Every such copy carries a `docs/brand.md`
-pointer in a nearby comment, so:
+Markdown can't be imported by Kotlin, and neither Kotlin nor Markdown can be
+imported by a drawable or an SVG, so hex values are physically duplicated
+outside this file. Every such copy carries a `docs/brand.md` pointer in a
+nearby comment, so:
 
 ```
 rg docs/brand.md
@@ -46,7 +47,7 @@ lists every file that must be updated by hand when a brand color changes.
 Change the value here first, then walk that list. The copies that hold
 literal hex:
 
-- `shared/src/commonMain/kotlin/net/clahey/kinderdraw/shared/userexperience/KidCanvasScreen.kt` — New Picture's sun-icon tint
+- `shared/src/commonMain/kotlin/net/clahey/kinderdraw/shared/brand/BrandColors.kt` — the whole palette, and the only copy anything written in Kotlin reads
 - `androidApp/src/main/res/drawable/ic_launcher_background.xml` — the launcher icon's field
 - `androidApp/src/main/res/drawable/ic_launcher_foreground.xml` — the launcher icon's scribble and dot
 - `docs/store-listing/icon-512.svg` — the same mark again, as the Play store icon's master
