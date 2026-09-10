@@ -96,7 +96,7 @@ fun KidCanvasScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // @spec CANVAS-UX-001, CANVAS-UX-009, CANVAS-UX-019
+        // @spec CANVAS-UX-001, CANVAS-UX-019
         KidButton(
             modifier = Modifier.align(Alignment.CenterEnd).testTag(NEW_PICTURE_TEST_TAG),
             lock = lock,
