@@ -66,9 +66,34 @@ class KidButtonTest {
         assertFalse(pressedStates.last(), "and clears it at the release")
     }
 
+    // @spec CANVAS-WIDGETS-002
+    @Test
+    fun claimsNothingForAPointerThatWentDownOutsideEveryHitRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) {
+                Box(Modifier.size(64.dp))
+            }
+        }
+        val bounds = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        onRoot().performTouchInput { down(Offset(bounds.right + 100f, bounds.bottom + 100f)) }
+        assertFalse(lock.isHeld(), "a down outside every hit region claims nothing")
+
+        // Dragged onto the KidWidget and lifted dead centre — the position a
+        // pointer that had been claimed would activate from.
+        onRoot().performTouchInput { moveTo(bounds.center) }
+        onRoot().performTouchInput { up() }
+        waitForIdle()
+
+        assertEquals(0, activations, "only a down inside a region claims a pointer")
+    }
+
     // @spec CANVAS-WIDGETS-003
     @Test
-    fun keepsAClaimedPointerWhenItDragsIntoAnotherControlsRegion() = runComposeUiTest {
+    fun keepsAClaimedPointerWhenItDragsIntoAnotherKidWidgetsRegion() = runComposeUiTest {
         val lock = InteractionLock()
         var leftActivations = 0
         var rightActivations = 0
@@ -93,13 +118,13 @@ class KidButtonTest {
         onRoot().performTouchInput { up() }
         waitForIdle()
 
-        assertEquals(1, leftActivations, "a claimed pointer activates the control that claimed it")
+        assertEquals(1, leftActivations, "a claimed pointer activates the KidWidget that claimed it")
         assertEquals(0, rightActivations, "and never the one it was dragged into")
     }
 
     // @spec CANVAS-WIDGETS-008
     @Test
-    fun measuresStrayTimeAgainstTheClaimingControlsOwnRegion() = runComposeUiTest {
+    fun measuresStrayTimeAgainstTheClaimingKidWidgetsOwnRegion() = runComposeUiTest {
         val lock = InteractionLock()
         var leftActivations = 0
         var rightActivations = 0
@@ -126,13 +151,13 @@ class KidButtonTest {
         onRoot().performTouchInput { advanceEventTime(500); up() }
         waitForIdle()
 
-        assertEquals(0, leftActivations, "a long stray isn't rescued by landing on another control")
-        assertEquals(0, rightActivations, "and the control strayed into doesn't activate either")
+        assertEquals(0, leftActivations, "a long stray isn't rescued by landing on another KidWidget")
+        assertEquals(0, rightActivations, "and the KidWidget strayed into doesn't activate either")
     }
 
     // @spec CANVAS-WIDGETS-028
     @Test
-    fun hitTestsAgainstTheSizeTheControlCurrentlyHas() = runComposeUiTest {
+    fun hitTestsAgainstTheSizeTheKidWidgetCurrentlyHas() = runComposeUiTest {
         val lock = InteractionLock()
         var activations = 0
 
@@ -147,15 +172,15 @@ class KidButtonTest {
         waitForIdle()
 
         val whilePressed = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
-        assertTrue(whilePressed.width > atRest.width, "the press feedback has to actually grow the control")
+        assertTrue(whilePressed.width > atRest.width, "the press feedback has to actually grow the KidWidget")
 
-        // Inside the grown control, outside the bounds it had at the claim, and
+        // Inside the grown KidWidget, outside the bounds it had at the claim, and
         // held there far too long for the stray tolerance to rescue it.
         onRoot().performTouchInput { moveTo(Offset(atRest.right + 16f, atRest.center.y)) }
         onRoot().performTouchInput { advanceEventTime(500); up() }
         waitForIdle()
 
-        assertEquals(1, activations, "a control that grew under the finger is judged by its new bounds")
+        assertEquals(1, activations, "a KidWidget that grew under the finger is judged by its new bounds")
     }
 
     // @spec CANVAS-WIDGETS-021

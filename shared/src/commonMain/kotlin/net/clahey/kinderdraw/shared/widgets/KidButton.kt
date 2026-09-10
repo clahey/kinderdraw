@@ -81,7 +81,7 @@ fun KidButton(
                             val event = awaitPointerEvent()
                             // @spec CANVAS-WIDGETS-020
                             val change = event.changes.firstOrNull { it.id == down.id } ?: continue
-                            // Press feedback can resize the control under the
+                            // Press feedback can resize the KidWidget under the
                             // finger, so the region that counts is the one on
                             // screen now.
                             // @spec CANVAS-WIDGETS-028

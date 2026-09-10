@@ -23,7 +23,7 @@ No path on today's screen cancels a press. Device rotation doesn't: Android defe
 
 The two ways a press can be cancelled look identical to the activation decision and differ in what survives them. A control removed from the screen takes its own rendering with it, so its press feedback has nothing left to clear, and whatever else was scoped to it — including an activation already under way — is cancelled alongside. A pointer input reset under a control that stays on screen leaves both the control and its surroundings alive, so feedback that isn't cleared stays visible and a running activation keeps running. The rules above hold in both cases; only their observable consequences differ.
 
-Hit regions are sized generously beyond each control's visible glyph, tolerant of imprecise placement — the visible control and its tappable area are not the same rectangle. A control's region is whatever it currently occupies, so one whose press feedback changes its own size is hit-tested against the size it's showing. Exact sizing, and the exact stray/inside thresholds above, are not fixed here (see Open Questions).
+Hit regions are sized generously beyond each control's visible glyph, tolerant of imprecise placement — the visible control and its tappable area are not the same rectangle. A KidWidget's region is whatever it currently occupies, so one whose press feedback changes its own size is hit-tested against the size it's showing. Exact sizing, and the exact stray/inside thresholds above, are not fixed here (see Open Questions).
 
 ## Reporting Activation
 
