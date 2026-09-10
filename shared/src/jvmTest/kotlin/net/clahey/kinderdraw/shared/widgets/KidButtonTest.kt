@@ -1,6 +1,7 @@
 package net.clahey.kinderdraw.shared.widgets
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,8 @@ import net.clahey.kinderdraw.shared.userexperience.InteractionLock
 import net.clahey.kinderdraw.shared.userexperience.isHeld
 
 private const val BUTTON_TAG = "kid-button"
+private const val LEFT_TAG = "left-button"
+private const val RIGHT_TAG = "right-button"
 
 @OptIn(ExperimentalTestApi::class)
 class KidButtonTest {
@@ -61,6 +64,70 @@ class KidButtonTest {
         waitForIdle()
         assertEquals(1, activations)
         assertFalse(pressedStates.last(), "and clears it at the release")
+    }
+
+    // @spec CANVAS-WIDGETS-003
+    @Test
+    fun keepsAClaimedPointerWhenItDragsIntoAnotherControlsRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var leftActivations = 0
+        var rightActivations = 0
+
+        setContent {
+            Row {
+                KidButton(onActivate = { leftActivations++ }, lock = lock, modifier = Modifier.testTag(LEFT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+                KidButton(onActivate = { rightActivations++ }, lock = lock, modifier = Modifier.testTag(RIGHT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+            }
+        }
+        val left = onNodeWithTag(LEFT_TAG).fetchSemanticsNode().boundsInRoot
+        val right = onNodeWithTag(RIGHT_TAG).fetchSemanticsNode().boundsInRoot
+
+        // Lifted over the right button, but soon enough after leaving the left
+        // one that the left button's own stray tolerance forgives the drift.
+        onRoot().performTouchInput { down(left.center) }
+        onRoot().performTouchInput { advanceEventTime(200); moveTo(right.center) }
+        onRoot().performTouchInput { up() }
+        waitForIdle()
+
+        assertEquals(1, leftActivations, "a claimed pointer activates the control that claimed it")
+        assertEquals(0, rightActivations, "and never the one it was dragged into")
+    }
+
+    // @spec CANVAS-WIDGETS-008
+    @Test
+    fun measuresStrayTimeAgainstTheClaimingControlsOwnRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var leftActivations = 0
+        var rightActivations = 0
+
+        setContent {
+            Row {
+                KidButton(onActivate = { leftActivations++ }, lock = lock, modifier = Modifier.testTag(LEFT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+                KidButton(onActivate = { rightActivations++ }, lock = lock, modifier = Modifier.testTag(RIGHT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+            }
+        }
+        val left = onNodeWithTag(LEFT_TAG).fetchSemanticsNode().boundsInRoot
+        val right = onNodeWithTag(RIGHT_TAG).fetchSemanticsNode().boundsInRoot
+
+        // Parked on the right button well past the tolerance. Against the left
+        // button's own region the pointer is outside for all of it; against
+        // whichever region it currently sits in it would count as inside.
+        onRoot().performTouchInput { down(left.center) }
+        assertTrue(lock.isHeld(), "the left button has to have claimed the pointer")
+        onRoot().performTouchInput { moveTo(right.center) }
+        onRoot().performTouchInput { advanceEventTime(500); up() }
+        waitForIdle()
+
+        assertEquals(0, leftActivations, "a long stray isn't rescued by landing on another control")
+        assertEquals(0, rightActivations, "and the control strayed into doesn't activate either")
     }
 
     // @spec CANVAS-WIDGETS-028
