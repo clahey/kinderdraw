@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import net.clahey.kinderdraw.shared.brand.BrandYellow
 import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
 import net.clahey.kinderdraw.shared.painting.Painting
 import net.clahey.kinderdraw.shared.painting.PaintingState
@@ -57,9 +58,8 @@ const val SAVE_FLIGHT_COVER_TEST_TAG = "save-flight-cover"
 /** The failed save's red flash. */
 const val SAVE_FAILURE_FLASH_TEST_TAG = "save-failure-flash"
 
-/** Brand yellow — see `docs/brand.md`. Used as a highlight on the icon only; the button's own chrome stays neutral gray. */
-private val BrandYellow = Color(0xFFFCD214)
-
+// New Picture's chrome is deliberately neutral: the brand yellow is a
+// highlight on the sun icon, not a fill.
 private val NewPictureBackground = Color(0xFFF2F2F2)
 private val NewPicturePressedBackground = Color(0xFFE0E0E0)
 private val NewPictureBorderColor = Color(0xFFBDBDBD)
@@ -144,7 +144,7 @@ fun KidCanvasScreen(
         // @spec CANVAS-UX-001, CANVAS-UX-035
         SaveFeedbackBelowButton(feedback, canvasSize, buttonBounds)
 
-        // @spec CANVAS-UX-001, CANVAS-UX-009, CANVAS-UX-019
+        // @spec CANVAS-UX-001, CANVAS-UX-019
         KidButton(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
@@ -172,11 +172,7 @@ fun KidCanvasScreen(
                             // Retrying a failed save can't duplicate the drawing:
                             // a failed create leaves no entry behind (IMAGES-019).
                             // @spec CANVAS-UX-011, CANVAS-UX-028
-                            val saved = if (state.save(imageStorage).isSuccess) {
-                                true
-                            } else {
-                                state.save(imageStorage).isSuccess
-                            }
+                            val saved = state.save(imageStorage).isSuccess || state.save(imageStorage).isSuccess
                             // A drawing that couldn't be saved stays on the
                             // canvas — clearing it would destroy the only copy.
                             // Clearing as soon as the write lands, rather than

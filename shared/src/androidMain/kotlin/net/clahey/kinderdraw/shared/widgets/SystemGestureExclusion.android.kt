@@ -19,10 +19,14 @@ import kotlin.math.roundToInt
  * One [GestureExclusionRegistry] per hosting [View] — `setSystemGestureExclusionRects`
  * takes one list for the whole View, so every control sharing that View
  * shares a registry rather than overwriting each other's rects.
+ *
+ * Reached only from [GestureExclusionNode]'s positioning and detach callbacks, which
+ * Compose delivers on the UI thread, so this unsynchronized map has no concurrent
+ * writers.
  */
-private val registriesByView = WeakHashMap<View, GestureExclusionRegistry>()
+private val registriesByView = WeakHashMap<View, GestureExclusionRegistry<GestureExclusionNode>>()
 
-private fun registryFor(view: View): GestureExclusionRegistry =
+private fun registryFor(view: View): GestureExclusionRegistry<GestureExclusionNode> =
     registriesByView.getOrPut(view) { GestureExclusionRegistry() }
 
 internal fun Rect.toAndroidRect(): AndroidRect =
@@ -60,7 +64,14 @@ private class GestureExclusionNode :
     }
 }
 
-/** Carries no parameters, so one instance serves every use and an update is never needed. */
+/**
+ * Carries no parameters, so one instance serves every use and an update is never needed.
+ *
+ * [ModifierNodeElement] declares [equals] and [hashCode] abstract — it compares elements
+ * across recomposition to choose between [create] and [update] — so a singleton has to
+ * spell out the identity comparison it would otherwise inherit, and can't reach
+ * `super.hashCode()` to do it.
+ */
 private object GestureExclusionElement : ModifierNodeElement<GestureExclusionNode>() {
     override fun create(): GestureExclusionNode = GestureExclusionNode()
 

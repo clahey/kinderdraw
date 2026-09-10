@@ -11,7 +11,7 @@ class GestureExclusionRegistryTest {
     // @spec CANVAS-WIDGETS-017
     @Test
     fun setWithOneKeyReturnsJustThatRect() {
-        val registry = GestureExclusionRegistry()
+        val registry = GestureExclusionRegistry<String>()
 
         val result = registry.set("a", rectA)
 
@@ -21,7 +21,7 @@ class GestureExclusionRegistryTest {
     // @spec CANVAS-WIDGETS-017
     @Test
     fun setWithTwoDifferentKeysReturnsBothRectsWithoutClobberingEitherOne() {
-        val registry = GestureExclusionRegistry()
+        val registry = GestureExclusionRegistry<String>()
 
         registry.set("a", rectA)
         val result = registry.set("b", rectB)
@@ -32,7 +32,7 @@ class GestureExclusionRegistryTest {
     // @spec CANVAS-WIDGETS-017
     @Test
     fun setTwiceWithTheSameKeyUpdatesRatherThanDuplicating() {
-        val registry = GestureExclusionRegistry()
+        val registry = GestureExclusionRegistry<String>()
         val movedRectA = Rect(1f, 1f, 11f, 11f)
 
         registry.set("a", rectA)
@@ -44,7 +44,7 @@ class GestureExclusionRegistryTest {
     // @spec CANVAS-WIDGETS-017
     @Test
     fun removeDropsOnlyThatKeysRectLeavingOthersRegistered() {
-        val registry = GestureExclusionRegistry()
+        val registry = GestureExclusionRegistry<String>()
         registry.set("a", rectA)
         registry.set("b", rectB)
 
@@ -56,7 +56,7 @@ class GestureExclusionRegistryTest {
     // @spec CANVAS-WIDGETS-017
     @Test
     fun removingAnUnregisteredKeyIsANoOp() {
-        val registry = GestureExclusionRegistry()
+        val registry = GestureExclusionRegistry<String>()
         registry.set("a", rectA)
 
         val result = registry.remove("never-registered")

@@ -64,7 +64,7 @@ class KidCanvasScreenTest {
     private val p0 = Point(0.1f, 0.1f)
     private val pointerA = PointerId(0L)
 
-    // @spec CANVAS-UX-001, CANVAS-UX-002, CANVAS-UX-009, CANVAS-UX-010, CANVAS-UX-011, CANVAS-UX-013
+    // @spec CANVAS-UX-001, CANVAS-UX-002, CANVAS-UX-010, CANVAS-UX-011, CANVAS-UX-013
     @Test
     fun newPictureSavesThenClearsWhenTheDrawingIsNotEmpty() = runComposeUiTest {
         val settings = FakeStyleSettings(brush = FakeBrush())
@@ -470,7 +470,7 @@ class KidCanvasScreenTest {
         assertTrue(state.isEmpty(), "the touch started no stroke on the freshly cleared canvas")
     }
 
-    // @spec CANVAS-UX-004, CANVAS-UX-009, CANVAS-UX-019
+    // @spec CANVAS-UX-004, CANVAS-UX-019
     @Test
     fun newPictureSequenceBlocksNewStrokesOnPaintingUntilItCompletes() = runComposeUiTest {
         val settings = FakeStyleSettings(brush = FakeBrush())

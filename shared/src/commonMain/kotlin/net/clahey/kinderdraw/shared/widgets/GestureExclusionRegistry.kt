@@ -11,17 +11,17 @@ import androidx.compose.ui.geometry.Rect
  * another; this holds the per-control state that makes it safe for more than
  * one control to register at once.
  */
-internal class GestureExclusionRegistry {
-    private val rects = mutableMapOf<Any, Rect>()
+internal class GestureExclusionRegistry<K : Any> {
+    private val rects = mutableMapOf<K, Rect>()
 
     // @spec CANVAS-WIDGETS-017
-    fun set(key: Any, rect: Rect): List<Rect> {
+    fun set(key: K, rect: Rect): List<Rect> {
         rects[key] = rect
         return rects.values.toList()
     }
 
     // @spec CANVAS-WIDGETS-017
-    fun remove(key: Any): List<Rect> {
+    fun remove(key: K): List<Rect> {
         rects.remove(key)
         return rects.values.toList()
     }

@@ -26,8 +26,7 @@
 
 ## Lifecycle Behavior — New Picture
 
-- [x] **CANVAS-UX-009**: When New Picture's pointer is claimed, the system shall hold the lock from that moment through that same pointer's release, so no other KidWidget press or stroke can start during the press itself — regardless of whether the release goes on to activate New Picture.
-- [x] **CANVAS-UX-019**: When New Picture activates, the system shall run the sequence below as that activation's own work, under the hold its press already took, keeping that hold until the sequence ends — including any save feedback it shows, and whether it ran through to the clear or stopped early at a failed save — rather than releasing it at the press's own release.
+- [x] **CANVAS-UX-019**: When New Picture activates, the system shall run the sequence below — including any save feedback it shows — as that activation's own work rather than launching it separately, so the hold CANVAS-WIDGETS-022 keeps through an activation covers the whole sequence.
 - [x] **CANVAS-UX-010**: When the New Picture sequence runs, the system shall first ask Painting whether the current drawing is empty.
 - [x] **CANVAS-UX-011**: When the New Picture sequence's emptiness check reports the drawing is not empty, the system shall call Painting's save operation with no id, so Image Storage creates a new entry, before clearing.
 - [x] **CANVAS-UX-012**: When the New Picture sequence's emptiness check reports the drawing is empty, the system shall skip the save call entirely, writing nothing to Image Storage.
