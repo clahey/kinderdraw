@@ -109,11 +109,7 @@ fun KidCanvasScreen(
                     // Retrying a failed save can't duplicate the drawing: a
                     // failed create leaves no entry behind (see IMAGES-019).
                     // @spec CANVAS-UX-011, CANVAS-UX-028
-                    val saved = if (state.save(imageStorage).isSuccess) {
-                        true
-                    } else {
-                        state.save(imageStorage).isSuccess
-                    }
+                    val saved = state.save(imageStorage).isSuccess || state.save(imageStorage).isSuccess
                     // A drawing that couldn't be saved stays on the canvas —
                     // clearing it would destroy the only copy.
                     // @spec CANVAS-UX-013, CANVAS-UX-029
