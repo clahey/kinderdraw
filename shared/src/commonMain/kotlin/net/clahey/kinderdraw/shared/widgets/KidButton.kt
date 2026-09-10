@@ -49,8 +49,8 @@ fun KidButton(
     var pressed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     // Keyed on lock alone below, so a caller's freshly-allocated onActivate
-    // lambda can't restart pointer input — and cancel a running activation —
-    // on every recomposition.
+    // lambda can't restart pointer input — cancelling a press underway — on
+    // every recomposition.
     val currentOnActivate by rememberUpdatedState(onActivate)
 
     Box(
