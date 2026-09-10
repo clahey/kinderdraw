@@ -3,14 +3,15 @@
 ## Hit-Testing and Activation
 
 - [x] **CANVAS-WIDGETS-001**: When a pointer touches down inside a KidWidget's hit region and the interaction lock grants that KidWidget a hold, the system shall claim that pointer for it, fixed for the remainder of that pointer's gesture.
-- [ ] **CANVAS-WIDGETS-002**: When a pointer's initial down location falls outside every KidWidget's hit region, the system shall not claim that pointer for any KidWidget even if it's later dragged into one — only an initial down inside a region claims it.
-- [ ] **CANVAS-WIDGETS-003**: Once a pointer is claimed by a KidWidget, the system shall not reassign it to a different KidWidget even if the pointer is dragged into that other KidWidget's hit region.
+- [x] **CANVAS-WIDGETS-002**: When a pointer's initial down location falls outside every KidWidget's hit region, the system shall not claim that pointer for any KidWidget even if it's later dragged into one — only an initial down inside a region claims it.
+- [x] **CANVAS-WIDGETS-003**: Once a pointer is claimed by a KidWidget, the system shall not reassign it to a different KidWidget even if the pointer is dragged into that other KidWidget's hit region.
 - [x] **CANVAS-WIDGETS-004**: When a KidWidget claims a pointer, the system shall show that KidWidget's press feedback immediately, regardless of whether the pointer's eventual release activates it.
 - [x] **CANVAS-WIDGETS-005**: When a claimed pointer is released while positioned inside its KidWidget's hit region, the system shall activate that KidWidget.
 - [x] **CANVAS-WIDGETS-006**: When a claimed pointer is released while positioned outside its KidWidget's hit region, the system shall still activate that KidWidget if the time spent continuously outside the region immediately before release is both under 100ms and less than the time the pointer spent inside the region immediately before that.
 - [x] **CANVAS-WIDGETS-007**: When a claimed pointer is released outside its KidWidget's hit region and CANVAS-WIDGETS-006's tolerance isn't met, the system shall not activate that KidWidget.
-- [ ] **CANVAS-WIDGETS-008**: When evaluating whether a claimed pointer's drift outside its region qualifies for CANVAS-WIDGETS-006's tolerance, the system shall measure that drift against the originally-claiming KidWidget's own hit region, not any other KidWidget's region the pointer may have drifted into.
+- [x] **CANVAS-WIDGETS-008**: When evaluating whether a claimed pointer's drift outside its region qualifies for CANVAS-WIDGETS-006's tolerance, the system shall measure that drift against the originally-claiming KidWidget's own hit region, not any other KidWidget's region the pointer may have drifted into.
 - [ ] **CANVAS-WIDGETS-009**: The system shall size each KidWidget's hit region larger than its visible glyph, so an imprecise touch near but not exactly on the glyph still claims it.
+- [x] **CANVAS-WIDGETS-028**: When deciding whether a claimed pointer is inside or outside its KidWidget's hit region, the system shall use that KidWidget's bounds as currently laid out.
 
 ## Reporting Activation
 
@@ -33,7 +34,7 @@
 
 ## Control Catalog
 
-- [ ] **CANVAS-WIDGETS-015**: Button shall expose a single hit region resulting in one activation action.
+- [x] **CANVAS-WIDGETS-015**: Button shall expose a single hit region resulting in one activation action. Being a property of Button's surface — one region, one `onActivate` — rather than of its behavior, this carries no test.
 - [ ] **CANVAS-WIDGETS-016**: Color Picker shall expose one independent hit region per color swatch, each following the same hit-testing and activation rule as Button.
 
 ## System Gesture Coexistence

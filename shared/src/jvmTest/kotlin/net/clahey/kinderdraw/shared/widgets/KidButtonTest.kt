@@ -1,6 +1,7 @@
 package net.clahey.kinderdraw.shared.widgets
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,8 @@ import net.clahey.kinderdraw.shared.userexperience.InteractionLock
 import net.clahey.kinderdraw.shared.userexperience.isHeld
 
 private const val BUTTON_TAG = "kid-button"
+private const val LEFT_TAG = "left-button"
+private const val RIGHT_TAG = "right-button"
 
 @OptIn(ExperimentalTestApi::class)
 class KidButtonTest {
@@ -49,12 +52,135 @@ class KidButtonTest {
         onRoot().performTouchInput { up() }
         waitForIdle()
         assertEquals(0, activations)
+        assertFalse(pressedStates.contains(true), "nor at the release that ends a refused gesture")
 
         // The refusal holds for the rest of that gesture; a fresh press works.
         heldElsewhere.release()
-        onRoot().performTouchInput { down(center); up() }
+        onRoot().performTouchInput { down(center) }
+        waitForIdle()
+        assertTrue(pressedStates.last(), "a press the lock now grants shows feedback")
+
+        onRoot().performTouchInput { up() }
         waitForIdle()
         assertEquals(1, activations)
+        assertFalse(pressedStates.last(), "and clears it at the release")
+    }
+
+    // @spec CANVAS-WIDGETS-002
+    @Test
+    fun claimsNothingForAPointerThatWentDownOutsideEveryHitRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) {
+                Box(Modifier.size(64.dp))
+            }
+        }
+        val bounds = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        onRoot().performTouchInput { down(Offset(bounds.right + 100f, bounds.bottom + 100f)) }
+        assertFalse(lock.isHeld(), "a down outside every hit region claims nothing")
+
+        // Dragged onto the KidWidget and lifted dead centre — the position a
+        // pointer that had been claimed would activate from.
+        onRoot().performTouchInput { moveTo(bounds.center) }
+        onRoot().performTouchInput { up() }
+        waitForIdle()
+
+        assertEquals(0, activations, "only a down inside a region claims a pointer")
+    }
+
+    // @spec CANVAS-WIDGETS-003
+    @Test
+    fun keepsAClaimedPointerWhenItDragsIntoAnotherKidWidgetsRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var leftActivations = 0
+        var rightActivations = 0
+
+        setContent {
+            Row {
+                KidButton(onActivate = { leftActivations++ }, lock = lock, modifier = Modifier.testTag(LEFT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+                KidButton(onActivate = { rightActivations++ }, lock = lock, modifier = Modifier.testTag(RIGHT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+            }
+        }
+        val left = onNodeWithTag(LEFT_TAG).fetchSemanticsNode().boundsInRoot
+        val right = onNodeWithTag(RIGHT_TAG).fetchSemanticsNode().boundsInRoot
+
+        // Lifted over the right button, but soon enough after leaving the left
+        // one that the left button's own stray tolerance forgives the drift.
+        onRoot().performTouchInput { down(left.center) }
+        onRoot().performTouchInput { advanceEventTime(200); moveTo(right.center) }
+        onRoot().performTouchInput { up() }
+        waitForIdle()
+
+        assertEquals(1, leftActivations, "a claimed pointer activates the KidWidget that claimed it")
+        assertEquals(0, rightActivations, "and never the one it was dragged into")
+    }
+
+    // @spec CANVAS-WIDGETS-008
+    @Test
+    fun measuresStrayTimeAgainstTheClaimingKidWidgetsOwnRegion() = runComposeUiTest {
+        val lock = InteractionLock()
+        var leftActivations = 0
+        var rightActivations = 0
+
+        setContent {
+            Row {
+                KidButton(onActivate = { leftActivations++ }, lock = lock, modifier = Modifier.testTag(LEFT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+                KidButton(onActivate = { rightActivations++ }, lock = lock, modifier = Modifier.testTag(RIGHT_TAG)) {
+                    Box(Modifier.size(64.dp))
+                }
+            }
+        }
+        val left = onNodeWithTag(LEFT_TAG).fetchSemanticsNode().boundsInRoot
+        val right = onNodeWithTag(RIGHT_TAG).fetchSemanticsNode().boundsInRoot
+
+        // Parked on the right button well past the tolerance. Against the left
+        // button's own region the pointer is outside for all of it; against
+        // whichever region it currently sits in it would count as inside.
+        onRoot().performTouchInput { down(left.center) }
+        assertTrue(lock.isHeld(), "the left button has to have claimed the pointer")
+        onRoot().performTouchInput { moveTo(right.center) }
+        onRoot().performTouchInput { advanceEventTime(500); up() }
+        waitForIdle()
+
+        assertEquals(0, leftActivations, "a long stray isn't rescued by landing on another KidWidget")
+        assertEquals(0, rightActivations, "and the KidWidget strayed into doesn't activate either")
+    }
+
+    // @spec CANVAS-WIDGETS-028
+    @Test
+    fun hitTestsAgainstTheSizeTheKidWidgetCurrentlyHas() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) { pressed ->
+                Box(Modifier.size(if (pressed) 128.dp else 64.dp))
+            }
+        }
+        val atRest = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        onRoot().performTouchInput { down(atRest.center) }
+        waitForIdle()
+
+        val whilePressed = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+        assertTrue(whilePressed.width > atRest.width, "the press feedback has to actually grow the KidWidget")
+
+        // Inside the grown KidWidget, outside the bounds it had at the claim, and
+        // held there far too long for the stray tolerance to rescue it.
+        onRoot().performTouchInput { moveTo(Offset(atRest.right + 16f, atRest.center.y)) }
+        onRoot().performTouchInput { advanceEventTime(500); up() }
+        waitForIdle()
+
+        assertEquals(1, activations, "a KidWidget that grew under the finger is judged by its new bounds")
     }
 
     // @spec CANVAS-WIDGETS-021
@@ -103,6 +229,7 @@ class KidButtonTest {
 
         onRoot().performTouchInput { down(center); up() }
         waitUntil { started.isCompleted }
+        waitForIdle()
 
         // The pointer is long gone, but the activation is still running.
         assertTrue(lock.isHeld())
@@ -135,6 +262,7 @@ class KidButtonTest {
 
         onRoot().performTouchInput { down(center); up() }
         waitUntil { started.isCompleted }
+        waitForIdle()
         assertTrue(lock.isHeld())
 
         // Leaving composition cancels the still-running activation. An
