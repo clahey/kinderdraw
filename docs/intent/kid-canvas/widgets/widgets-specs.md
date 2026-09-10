@@ -10,6 +10,7 @@
 - [x] **CANVAS-WIDGETS-006**: When a claimed pointer is released while positioned outside its control's hit region, the system shall still activate that control if the time spent continuously outside the region immediately before release is both under 100ms and less than the time the pointer spent inside the region immediately before that.
 - [x] **CANVAS-WIDGETS-007**: When a claimed pointer is released outside its control's hit region and CANVAS-WIDGETS-006's tolerance isn't met, the system shall not activate that control.
 - [ ] **CANVAS-WIDGETS-008**: When evaluating whether a claimed pointer's drift outside its region qualifies for CANVAS-WIDGETS-006's tolerance, the system shall measure that drift against the originally-claiming control's own hit region, not any other control's region the pointer may have drifted into.
+- [x] **CANVAS-WIDGETS-028**: When deciding whether a claimed pointer is inside or outside its control's hit region, the system shall use that control's bounds as currently laid out.
 - [ ] **CANVAS-WIDGETS-009**: The system shall size each control's hit region larger than its visible glyph, so an imprecise touch near but not exactly on the glyph still claims the control.
 
 ## Reporting Activation

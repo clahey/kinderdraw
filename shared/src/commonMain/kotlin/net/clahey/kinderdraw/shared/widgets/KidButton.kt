@@ -76,12 +76,16 @@ fun KidButton(
                     var releaseOnExit = true
                     var pressEnded = false
                     try {
-                        val bounds = Rect(Offset.Zero, size.toSize())
                         pressState.onClaim(now = down.uptimeMillis)
                         while (true) {
                             val event = awaitPointerEvent()
                             // @spec CANVAS-WIDGETS-020
                             val change = event.changes.firstOrNull { it.id == down.id } ?: continue
+                            // Press feedback can resize the control under the
+                            // finger, so the region that counts is the one on
+                            // screen now.
+                            // @spec CANVAS-WIDGETS-028
+                            val bounds = Rect(Offset.Zero, size.toSize())
                             // The release carries its own position, which can
                             // differ from the last move's: a finger that
                             // drifted off and came back lifts inside without

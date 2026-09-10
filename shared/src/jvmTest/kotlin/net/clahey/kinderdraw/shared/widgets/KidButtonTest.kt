@@ -49,12 +49,46 @@ class KidButtonTest {
         onRoot().performTouchInput { up() }
         waitForIdle()
         assertEquals(0, activations)
+        assertFalse(pressedStates.contains(true), "nor at the release that ends a refused gesture")
 
         // The refusal holds for the rest of that gesture; a fresh press works.
         heldElsewhere.release()
-        onRoot().performTouchInput { down(center); up() }
+        onRoot().performTouchInput { down(center) }
+        waitForIdle()
+        assertTrue(pressedStates.last(), "a press the lock now grants shows feedback")
+
+        onRoot().performTouchInput { up() }
         waitForIdle()
         assertEquals(1, activations)
+        assertFalse(pressedStates.last(), "and clears it at the release")
+    }
+
+    // @spec CANVAS-WIDGETS-028
+    @Test
+    fun hitTestsAgainstTheSizeTheControlCurrentlyHas() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) { pressed ->
+                Box(Modifier.size(if (pressed) 128.dp else 64.dp))
+            }
+        }
+        val atRest = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        onRoot().performTouchInput { down(atRest.center) }
+        waitForIdle()
+
+        val whilePressed = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+        assertTrue(whilePressed.width > atRest.width, "the press feedback has to actually grow the control")
+
+        // Inside the grown control, outside the bounds it had at the claim, and
+        // held there far too long for the stray tolerance to rescue it.
+        onRoot().performTouchInput { moveTo(Offset(atRest.right + 16f, atRest.center.y)) }
+        onRoot().performTouchInput { advanceEventTime(500); up() }
+        waitForIdle()
+
+        assertEquals(1, activations, "a control that grew under the finger is judged by its new bounds")
     }
 
     // @spec CANVAS-WIDGETS-021
