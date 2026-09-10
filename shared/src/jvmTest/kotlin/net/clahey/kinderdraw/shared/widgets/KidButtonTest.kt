@@ -229,6 +229,7 @@ class KidButtonTest {
 
         onRoot().performTouchInput { down(center); up() }
         waitUntil { started.isCompleted }
+        waitForIdle()
 
         // The pointer is long gone, but the activation is still running.
         assertTrue(lock.isHeld())
@@ -261,6 +262,7 @@ class KidButtonTest {
 
         onRoot().performTouchInput { down(center); up() }
         waitUntil { started.isCompleted }
+        waitForIdle()
         assertTrue(lock.isHeld())
 
         // Leaving composition cancels the still-running activation. An
