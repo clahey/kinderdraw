@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
@@ -89,6 +90,32 @@ class KidButtonTest {
         waitForIdle()
 
         assertEquals(0, activations, "only a down inside a region claims a pointer")
+    }
+
+    // @spec CANVAS-UX-027
+    @Test
+    fun takesNoHoldForAPointerMerelyHoveringOverIt() = runComposeUiTest {
+        val lock = InteractionLock()
+        var activations = 0
+        var everPressed = false
+
+        setContent {
+            KidButton(onActivate = { activations++ }, lock = lock, modifier = Modifier.testTag(BUTTON_TAG)) { pressed ->
+                if (pressed) everPressed = true
+                Box(Modifier.size(64.dp))
+            }
+        }
+        val bounds = onNodeWithTag(BUTTON_TAG).fetchSemanticsNode().boundsInRoot
+
+        // A mouse crossing the KidWidget with no button down is a pointer that
+        // is over the hit region without ever touching down in it.
+        onRoot().performMouseInput { moveTo(bounds.center) }
+        onRoot().performMouseInput { moveTo(bounds.center + Offset(5f, 5f)) }
+        waitForIdle()
+
+        assertFalse(lock.isHeld(), "a hovering pointer must not take the lock")
+        assertFalse(everPressed, "a hovering pointer must not claim the KidWidget")
+        assertEquals(0, activations)
     }
 
     // @spec CANVAS-WIDGETS-003

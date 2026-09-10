@@ -2,7 +2,7 @@
 
 ## Screen Composition
 
-- [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose each KidWidget as chrome anchored along the screen's edges on top of it, so no KidWidget ever sits over the drawing area. Transient presentation the screen itself raises over the drawing area — the save feedback of CANVAS-UX-031 through CANVAS-UX-034 — is layered between the two and is not a KidWidget: it accepts no input (see CANVAS-UX-035) and outlives no gesture.
+- [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose each KidWidget as chrome anchored along the screen's edges on top of it, so the chrome covers only the drawing surface's margins and never its interior. Transient presentation the screen itself raises over the drawing surface — the save feedback of CANVAS-UX-031 through CANVAS-UX-034 — is layered between the two and is not a KidWidget: it accepts no input (see CANVAS-UX-035) and outlives no gesture.
 
 ## Input Arbitration
 
@@ -15,7 +15,7 @@
 - [x] **CANVAS-UX-022**: When a hold that has already been released is released again, the system shall leave the lock's current holder unchanged, so a stale hold cannot free a later holder's.
 - [x] **CANVAS-UX-023**: The system shall request and release a hold only from the UI dispatcher, and shall carry no synchronization of its own. A KidWidget's release after a suspending activation satisfies this by running in a composition-tied scope — see CANVAS-WIDGETS-024. Being an invariant over every call site rather than a triggered behavior, this carries no test of its own; each call site's own tests exercise it.
 - [x] **CANVAS-UX-024**: When the kid canvas screen is composed, including after an OS-driven recreation, the system shall start with the lock unheld rather than restoring any hold in effect beforehand.
-- [x] **CANVAS-UX-027**: The system shall request a hold only on an input event carrying at least one pointer newly touching down, and only while the requester isn't already holding one — so a hovering pointer never takes the lock, and a pointer joining a gesture already held doesn't request a second time. The hover half is verified by inspection rather than by test — the test harness injects touch, and a touch pointer is always pressed, so no test can construct a hovering one.
+- [x] **CANVAS-UX-027**: The system shall request a hold only on an input event carrying at least one pointer newly touching down, and only while the requester isn't already holding one — so a hovering pointer never takes the lock, and a pointer joining a gesture already held doesn't request a second time.
 - [x] **CANVAS-UX-026**: When two pointers touch down in the same input event, one inside a KidWidget's hit region and one outside every KidWidget's hit region, the system shall grant a hold to exactly one of them and refuse the other. Which one wins is unspecified — the two requests race, and either outcome is acceptable. Layering decides only which component a *single* pointer reaches at all, per CANVAS-UX-002 and CANVAS-UX-003. The exactly-one-wins half is verified at the lock itself rather than through the screen: the test harness enqueues each touch-down as its own input event, so two pointers arriving in one event can't be constructed from a test.
 
 ## Feature Gating
