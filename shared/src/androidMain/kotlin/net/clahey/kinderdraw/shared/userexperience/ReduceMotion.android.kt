@@ -6,10 +6,10 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.awaitCancellation
 
 /**
  * Whether the platform reports that the user has asked for reduced motion —
@@ -34,10 +34,11 @@ fun Context.isReduceMotionRequested(): Boolean =
 @Composable
 fun rememberReduceMotion(): Boolean {
     val context = LocalContext.current
-    val reduceMotion by produceState(context.isReduceMotionRequested(), context) {
+    val reduceMotion = remember(context) { mutableStateOf(context.isReduceMotionRequested()) }
+    DisposableEffect(context) {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
-                value = context.isReduceMotionRequested()
+                reduceMotion.value = context.isReduceMotionRequested()
             }
         }
         context.contentResolver.registerContentObserver(
@@ -45,11 +46,10 @@ fun rememberReduceMotion(): Boolean {
             false,
             observer,
         )
-        try {
-            awaitCancellation()
-        } finally {
-            context.contentResolver.unregisterContentObserver(observer)
-        }
+        // Registration lands after the read above, so a change arriving in
+        // between would otherwise go unnoticed until the one after it.
+        reduceMotion.value = context.isReduceMotionRequested()
+        onDispose { context.contentResolver.unregisterContentObserver(observer) }
     }
-    return reduceMotion
+    return reduceMotion.value
 }
