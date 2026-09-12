@@ -2,14 +2,18 @@ package net.clahey.kinderdraw.shared.userexperience
 
 import android.content.Context
 import android.provider.Settings
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.test.core.app.ApplicationProvider
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
 class ReduceMotionTest {
@@ -49,6 +53,26 @@ class ReduceMotionTest {
 
         setAnimatorScale(0.5f)
         assertFalse(context.isReduceMotionRequested())
+    }
+
+    // @spec CANVAS-UX-039
+    @Test
+    fun reachesAComposedScreenWhenTheSettingChanges() = runComposeUiTest {
+        setAnimatorScale(1f)
+        var observed: Boolean? = null
+
+        setContent { observed = rememberReduceMotion() }
+        waitForIdle()
+        assertEquals(false, observed)
+
+        setAnimatorScale(0f)
+        waitForIdle()
+        assertEquals(true, observed, "turning animations off must reach the screen without a restart")
+
+        // And back — the observer isn't a one-shot.
+        setAnimatorScale(1f)
+        waitForIdle()
+        assertEquals(false, observed)
     }
 
     // @spec CANVAS-UX-039
