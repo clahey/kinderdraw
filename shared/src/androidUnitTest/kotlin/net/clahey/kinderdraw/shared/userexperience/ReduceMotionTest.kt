@@ -58,21 +58,28 @@ class ReduceMotionTest {
     // @spec CANVAS-UX-039
     @Test
     fun reachesAComposedScreenWhenTheSettingChanges() = runComposeUiTest {
+        setAnimatorScale(0f)
+        var observed = false
+        var atFirstComposition: Boolean? = null
+
+        setContent {
+            observed = rememberReduceMotion()
+            // Captured from inside the composition, where the effect that
+            // registers the observer has not run yet and so cannot have
+            // corrected it.
+            if (atFirstComposition == null) atFirstComposition = observed
+        }
+        assertEquals(true, atFirstComposition)
+
         setAnimatorScale(1f)
-        var observed: Boolean? = null
-
-        setContent { observed = rememberReduceMotion() }
         waitForIdle()
-        assertEquals(false, observed)
+        assertFalse(observed)
 
+        // Again, because an observer that fired once and stopped would satisfy
+        // everything above.
         setAnimatorScale(0f)
         waitForIdle()
-        assertEquals(true, observed, "turning animations off must reach the screen without a restart")
-
-        // And back — the observer isn't a one-shot.
-        setAnimatorScale(1f)
-        waitForIdle()
-        assertEquals(false, observed)
+        assertTrue(observed)
     }
 
     // @spec CANVAS-UX-039

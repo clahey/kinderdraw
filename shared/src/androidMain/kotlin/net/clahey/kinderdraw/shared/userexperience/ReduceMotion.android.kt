@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.LocalContext
  * animation rather than against it.
  */
 // @spec CANVAS-UX-039
-fun Context.isReduceMotionRequested(): Boolean =
+internal fun Context.isReduceMotionRequested(): Boolean =
     Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
 /**
