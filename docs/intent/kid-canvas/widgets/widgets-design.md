@@ -7,13 +7,13 @@ prefix: CANVAS-WIDGETS
 
 ## Context and Design Philosophy
 
-Widgets implements KidWidgets, the library of on-screen controls (buttons, color picker, and similar chrome) used everywhere on the kid canvas. Standard Compose gesture recognizers (`clickable()`, Material's ripple/gesture stack) assume adult motor control — a precise tap, a drag-cancel-on-outside-release convention, timing tuned for an adult's touch. Toddlers can't reliably produce that input, so every control here reads raw pointer events directly (`Modifier.pointerInput` / `awaitPointerEventScope`) and defines its own hit-testing and activation from scratch, rather than composing standard clickable modifiers.
+Widgets implements KidWidgets, the library of on-screen controls used everywhere on the kid canvas. One such control is a **KidWidget** — a button, a color-picker swatch, or similar chrome. Within this document, where nothing else could be meant, "control" is shorthand for the same thing. Standard Compose gesture recognizers (`clickable()`, Material's ripple/gesture stack) assume adult motor control — a precise tap, a drag-cancel-on-outside-release convention, timing tuned for an adult's touch. Toddlers can't reliably produce that input, so every control here reads raw pointer events directly (`Modifier.pointerInput` / `awaitPointerEventScope`) and defines its own hit-testing and activation from scratch, rather than composing standard clickable modifiers.
 
 Widgets does its own ordinary hit-testing on whatever pointer Compose delivers to it, and requests a hold from the screen's interaction lock before claiming that pointer (see Interaction Arbitration Contract). Widgets' own job is narrower than arbitration: given a pointer it's allowed to claim, decide reliably which control (if any) it activates.
 
 ## Hit-Testing and Activation
 
-A control's hit region claims whatever pointer lands inside it on `down`, provided the interaction lock grants it a hold at that same moment (see Interaction Arbitration Contract). That claim is fixed for the rest of the pointer's gesture: dragging an already-down pointer into a control's region never claims it, and once a pointer is claimed, dragging it into a *different* control's region doesn't reassign it there either. Press feedback appears the instant a pointer is claimed, well before the activation decision below is made, so a toddler gets some visible response to every touch the control was allowed to claim, whether or not it ultimately activates anything. A pointer the lock refuses is never claimed at all, and so produces no feedback — a control that may not act must not look like it did.
+A KidWidget's hit region claims whatever pointer lands inside it on `down`, provided the interaction lock grants it a hold at that same moment (see Interaction Arbitration Contract). That claim is fixed for the rest of the pointer's gesture: dragging an already-down pointer into a control's region never claims it, and once a pointer is claimed, dragging it into a *different* control's region doesn't reassign it there either. Press feedback appears the instant a pointer is claimed, well before the activation decision below is made, so a toddler gets some visible response to every touch the control was allowed to claim, whether or not it ultimately activates anything. A pointer the lock refuses is never claimed at all, and so produces no feedback — a control that may not act must not look like it did.
 
 Whether a claimed pointer ends in activation is decided at its release, not at `down` — but not with `clickable()`'s zero-tolerance rule either, since a toddler's finger commonly drifts just outside a control's region in the final moment of lifting off, observed directly in testing with an actual toddler tester. Each control tracks two timestamps as its claimed pointer moves: when it most recently entered the hit region (or the initial down time, if it never left), and when it most recently exited (unset while inside). At release: if the pointer is currently inside the region, the control activates. If it's currently outside, the control still activates when the time spent outside is under roughly 100ms *and* less than the time spent inside immediately before that — a brief lift-off wobble a toddler didn't intend as an exit. Otherwise the gesture ends with no activation, exactly as if the pointer had been dragged well away and released there. A drift toward a neighboring control's region (most likely between adjacent Color Picker swatches) is measured against the *originally claimed* control's own bounds, not the one the pointer drifted into — consistent with control assignment being fixed at `down`.
 
@@ -27,7 +27,7 @@ Hit regions are sized generously beyond each control's visible glyph, tolerant o
 
 ## Reporting Activation
 
-Each control instance takes one callback outward: `onActivate: suspend () -> Unit`, invoked once when a claimed pointer's release counts as an activation (see Hit-Testing and Activation), and not at all when it doesn't.
+Each KidWidget takes one callback outward: `onActivate: suspend () -> Unit`, invoked once when a claimed pointer's release counts as an activation (see Hit-Testing and Activation), and not at all when it doesn't.
 
 It suspends because a control keeps its hold until its activation's own work has finished (see Interaction Arbitration Contract), so an action that waits on storage keeps the screen to itself for that whole span. The control runs it in a scope tied to its own composition rather than to the pointer-event stream, so the release that triggered an action never cancels the action it triggered.
 
@@ -37,12 +37,12 @@ A control with multiple independent hit regions (Color Picker) takes one `onActi
 
 ## Control Catalog
 
-Two controls exist today:
+Two KidWidgets exist today:
 
 - **Button** — a single hit region, one activation action (e.g. New Picture).
 - **Color Picker** — multiple hit regions, one per color swatch, each an independent activation target following the same hit-testing and activation rule as Button; activating a swatch selects that color.
 
-Both are built on the same raw-pointer hit-testing and activation primitive described above, as any control added later would be.
+Both are built on the same raw-pointer hit-testing and activation primitive described above, as any KidWidget added later would be.
 
 ## Interaction Arbitration Contract
 
@@ -59,7 +59,7 @@ Widgets depends on nothing beyond the pointer events Compose's own hit-testing d
 
 ## System Gesture Coexistence
 
-A control's hit region can end up wherever User Experience anchors it (see the User Experience LLD's Screen Composition), including flush against a screen edge — and on Android, the OS reserves the edges for its own gesture navigation (the back-swipe strip along the left and right edges). A toddler's touch that starts inside a control's hit region but lands within that reserved strip risks being intercepted by the OS as a system gesture rather than reaching the control at all — the same "hands accidentally leave the app" failure the toddler-usability tenet already rules out, this time via the OS rather than an in-app control.
+A KidWidget's hit region can end up wherever User Experience anchors it (see the User Experience LLD's Screen Composition), including flush against a screen edge — and on Android, the OS reserves the edges for its own gesture navigation (the back-swipe strip along the left and right edges). A toddler's touch that starts inside a control's hit region but lands within that reserved strip risks being intercepted by the OS as a system gesture rather than reaching the control at all — the same "hands accidentally leave the app" failure the toddler-usability tenet already rules out, this time via the OS rather than an in-app control.
 
 Widgets closes that gap the same way it already reasons about hit-testing: using each control's own on-screen bounds, already computed for Hit-Testing and Activation, to register that region with the platform as excluded from system gesture handling. On Android this is `View.setSystemGestureExclusionRects`; platforms without an equivalent concept simply have nothing to register. This applies unconditionally to every control — one away from any gesture zone registers a rect that has nothing to exclude.
 
@@ -90,7 +90,7 @@ This doesn't cover the bottom edge's home/overview gesture — the OS reserves t
 ### Deferred
 
 1. Exact hit-region sizing/tolerance beyond the visible glyph is a visual-design decision, not fixed here.
-2. Full control catalog beyond Button and Color Picker isn't enumerated ahead of need — new controls follow the existing primitive.
+2. The full catalog beyond Button and Color Picker isn't enumerated ahead of need — a new KidWidget follows the existing primitive.
 3. The stray-tolerance threshold (roughly 100ms) and the "stray shorter than the preceding time spent inside" rule are a first guess, expected to be refined against real usage data.
 4. `InteractionLock` is a concrete class owned by User Experience, so KidWidgets currently can't be lifted out of this app without it. If the library is ever extracted for reuse, the shape that fixes this is for Widgets to own a minimal interface for what it actually needs — may I claim, I'm done — and for `InteractionLock` to implement it. Not worth doing before there's a second consumer.
 
@@ -98,4 +98,4 @@ This doesn't cover the bottom edge's home/overview gesture — the OS reserves t
 
 - Parent sub-HLD: `docs/intent/kid-canvas/kid-canvas-design.md` — defines Widgets as implementing the KidWidgets library.
 - Root HLD: `docs/high-level-design.md` — Approach (raw pointer input on kid canvas controls), Tenets (toddler usability over platform convention).
-- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Input Arbitration (defines the `InteractionLock` each control takes), Screen Composition (which controls are placed where).
+- Sibling: `docs/intent/kid-canvas/user-experience/user-experience-design.md` — Input Arbitration (defines the `InteractionLock` each KidWidget takes), Screen Composition (which KidWidgets are placed where).
