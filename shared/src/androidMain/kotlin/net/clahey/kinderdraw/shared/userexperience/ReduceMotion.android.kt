@@ -18,8 +18,6 @@ import androidx.compose.ui.platform.LocalContext
  * Android has no flag of its own for this. Both the "Remove animations"
  * accessibility setting and the developer-options animator scale write
  * [Settings.Global.ANIMATOR_DURATION_SCALE], and zero there means play none.
- * Any other value, however stretched or shortened, is still a request for
- * animation rather than against it.
  */
 // @spec CANVAS-UX-039
 internal fun Context.isReduceMotionRequested(): Boolean =

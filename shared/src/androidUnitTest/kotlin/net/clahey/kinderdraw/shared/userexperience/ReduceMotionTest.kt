@@ -46,8 +46,6 @@ class ReduceMotionTest {
     // @spec CANVAS-UX-039
     @Test
     fun aSlowedScaleIsNotAReducedMotionRequest() {
-        // Only zero means "play none". A scale someone stretched or shortened
-        // for their own reasons is still a request for animation.
         setAnimatorScale(10f)
         assertFalse(context.isReduceMotionRequested())
 
