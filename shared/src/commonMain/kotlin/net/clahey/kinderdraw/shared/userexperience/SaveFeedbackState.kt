@@ -1,6 +1,7 @@
 package net.clahey.kinderdraw.shared.userexperience
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -86,11 +87,13 @@ class SaveFeedbackState {
     val flash = Animatable(0f)
 
     /**
-     * The sheet is in front of the button only while it is over there, and
-     * both ends of that span fall on a movement boundary where it doesn't
-     * overlap the button — so neither change of layer can be seen. Shrinking
-     * first is what buys the near end: at full size the sheet would cover the
-     * button, and drawing over it then would take it off screen.
+     * Whether the sheet is drawn over the button rather than behind it, which
+     * it is while crossing to the button, resting at it, and leaving it.
+     * The layer changes at each end of that run, and both ends fall at a
+     * movement boundary where the sheet doesn't overlap the button, so neither
+     * change can be seen. Shrinking before the crossing is what creates the
+     * first of those moments: a sheet still at full size covers the button, so
+     * drawing it on top would hide the button entirely.
      */
     // @spec CANVAS-UX-043
     val aboveButton: Boolean
@@ -154,14 +157,14 @@ class SaveFeedbackState {
      */
     // @spec CANVAS-UX-032, CANVAS-UX-033, CANVAS-UX-043
     suspend fun rebound() {
-        leg = SaveFlightLeg.Recede
-        progress.snapTo(0f)
         coroutineScope {
+            // Started at the turn and left to run on its own duration — it
+            // paces nothing here and nothing here paces it.
             launch { flashOnce() }
             // Paired with Grow the same way the outbound legs are paired.
-            progress.animateTo(1f, tween(RECEDE_MILLIS, easing = FastOutLinearInEasing))
+            run(SaveFlightLeg.Recede, RECEDE_MILLIS, FastOutLinearInEasing)
+            run(SaveFlightLeg.Grow, GROW_MILLIS, LinearOutSlowInEasing)
         }
-        run(SaveFlightLeg.Grow, GROW_MILLIS, LinearOutSlowInEasing)
     }
 
     /**
@@ -194,7 +197,7 @@ class SaveFeedbackState {
     private suspend fun run(
         leg: SaveFlightLeg,
         millis: Int,
-        easing: androidx.compose.animation.core.Easing,
+        easing: Easing,
     ) {
         this.leg = leg
         progress.snapTo(0f)
