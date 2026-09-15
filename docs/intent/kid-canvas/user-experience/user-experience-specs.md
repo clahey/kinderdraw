@@ -2,7 +2,7 @@
 
 ## Screen Composition
 
-- [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose each KidWidget as chrome anchored along the screen's edges on top of it, so the chrome covers only the drawing surface's margins and never its interior. Transient presentation the screen itself raises over the drawing surface — the save feedback of CANVAS-UX-031 through CANVAS-UX-034 — is layered between the two and is not a KidWidget: it accepts no input (see CANVAS-UX-035) and outlives no gesture.
+- [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose each KidWidget as chrome anchored along the screen's edges on top of it, so the chrome covers only the drawing surface's margins and never its interior. Transient presentation the screen itself raises over the drawing surface — the save feedback of CANVAS-UX-031 through CANVAS-UX-034 — is not a KidWidget: it accepts no input (see CANVAS-UX-035) and outlives no gesture. Where each part of it sits relative to the chrome is that part's own to specify.
 
 ## Input Arbitration
 

@@ -15,7 +15,7 @@ The toddler-usability tenet governs every decision here: no confirmation dialogs
 
 The screen has two standing layers. Painting fills the entire screen as the drawing surface. Widgets are composed as chrome on top of it, anchored along the edges so the chrome covers only the drawing surface's margins, never its interior, and never requires reaching across the screen to a fixed toolbar band. User Experience owns which KidWidgets are present and how they're arranged relative to each other and to the drawing surface underneath; each one's own rendering, hit-testing, and activation belong to Widgets. The drawing surface runs under the chrome rather than stopping at it, so a stroke dragged beneath a KidWidget goes on being recorded and comes out in the saved image — covered on screen, but not cut off there.
 
-A third layer exists only while User Experience is showing something of its own — today, the save feedback in Putting the Drawing Away. It's presentation rather than structure: it belongs to no KidWidget, accepts no input, and never outlives the action that raised it, and where it falls among the standing layers is the raising action's to decide. The rule keeping *KidWidgets* off the drawing surface's interior is untouched by it.
+Other layers exist only while User Experience is showing something of its own — today, the save feedback in Putting the Drawing Away. They're presentation rather than structure: they belong to no KidWidget, accept no input, and never outlive the action that raised them, and where each falls among the standing layers is the raising action's to decide. The rule keeping *KidWidgets* off the drawing surface's interior is untouched by them.
 
 ## Input Arbitration
 
