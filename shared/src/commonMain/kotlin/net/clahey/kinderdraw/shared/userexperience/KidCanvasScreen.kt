@@ -398,12 +398,6 @@ private fun SaveFeedbackState.placement(canvas: Size, button: Rect): Placement {
     val full = Placement(1f, canvas.width / 2f, canvas.height / 2f, 0f)
     if (canvas.width <= 0f || canvas.height <= 0f || button.isEmpty) return full
 
-    val inside = Placement(
-        scale = minOf(button.width / canvas.width, button.height / canvas.height),
-        centerX = button.center.x,
-        centerY = button.center.y,
-        rotation = 0f,
-    )
     // Small enough, where it already stands, that its right edge clears the
     // button — which is what lets the next movement draw over the button
     // without hiding it.
@@ -414,20 +408,25 @@ private fun SaveFeedbackState.placement(canvas: Size, button: Rect): Placement {
         rotation = 0f,
     )
     // Narrower than the button, so the overlap reads as the sheet meeting an
-    // opening rather than straddling it.
-    val hoverScale = button.width * HoverWidthOfButton / canvas.width
+    // opening rather than straddling it, and no taller than the button, since
+    // the descent draws it underneath and anything longer would stick out.
+    val slotScale = minOf(
+        button.width * HoverWidthOfButton / canvas.width,
+        button.height / canvas.height,
+    )
     val hover = Placement(
-        scale = hoverScale,
+        scale = slotScale,
         centerX = button.center.x,
         // Overlapping the button's top edge — at the opening rather than
         // resting on a shape.
-        centerY = button.top + button.height * HoverOverlap - canvas.height * hoverScale / 2f,
+        centerY = button.top + button.height * HoverOverlap - canvas.height * slotScale / 2f,
         rotation = 0f,
     )
+    val inside = hover.copy(centerY = button.center.y)
     // Clear of the button again, so the layer change either movement out of
     // here makes cannot be seen.
     val poised = hover.copy(
-        centerY = button.top - button.height * PoiseClearance - canvas.height * hoverScale / 2f,
+        centerY = button.top - button.height * PoiseClearance - canvas.height * slotScale / 2f,
     )
     // Wholly off the far side from the button, at the size a leaving sheet
     // shrinks to: the old drawing goes out to the right, the new one comes in
