@@ -303,26 +303,30 @@ private fun BoxScope.SaveFailureFlashOverlay(
         // nowhere to spread it from.
         state.flashHeld -> Modifier.graphicsLayer { alpha = FlashPeakAlpha }
 
-        flash > 0f -> {
-            // Grown from the button rather than washed over the screen, so the
-            // failure is attributed to the control that was pressed. Scaling a
-            // full-screen rect about any interior point only grows it, so a
-            // scale of one already reaches every edge.
+        // Growing out of the button rather than washing over the screen.
+        // Scaling a full-screen rect about any interior point only grows it,
+        // so a scale of one already reaches every edge.
+        flash > 0f && flash <= FlashSpreadFraction -> {
+            val expanded = flash / FlashSpreadFraction
             val origin = if (buttonBounds.isEmpty || canvasSize.width <= 0f || canvasSize.height <= 0f) {
                 TransformOrigin.Center
             } else {
                 TransformOrigin(buttonBounds.center.x / canvasSize.width, buttonBounds.center.y / canvasSize.height)
             }
-            val spread = (flash / FlashSpreadFraction).coerceAtMost(1f)
-            // Brightens over the spread, then fades once it has arrived.
-            val brightness = if (flash < FlashSpreadFraction) spread else 1f - (flash - FlashSpreadFraction) / (1f - FlashSpreadFraction)
             Modifier.graphicsLayer {
                 transformOrigin = origin
-                scaleX = spread
-                scaleY = spread
-                alpha = brightness * FlashPeakAlpha
+                scaleX = expanded
+                scaleY = expanded
+                alpha = expanded * FlashPeakAlpha
             }
         }
+
+        // Arrived: covering the screen already, so only its brightness is
+        // still changing.
+        flash > FlashSpreadFraction ->
+            Modifier.graphicsLayer {
+                alpha = (1f - flash) / (1f - FlashSpreadFraction) * FlashPeakAlpha
+            }
 
         else -> null
     }
