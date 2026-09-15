@@ -147,9 +147,8 @@ fun KidCanvasScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Between Painting and the chrome. Nothing here takes pointer input.
         // @spec CANVAS-UX-001, CANVAS-UX-035
-        SaveFeedbackBelowButton(feedback, canvasSize, buttonBounds)
+        SaveFlight(feedback, canvasSize, buttonBounds)
 
         // @spec CANVAS-UX-033, CANVAS-UX-035
         SaveFailureFlashOverlay(feedback, canvasSize, buttonBounds)
@@ -245,13 +244,13 @@ fun KidCanvasScreen(
 }
 
 /**
- * Everything the save feedback draws beneath the New Picture button — see the
- * User Experience LLD's Putting the Drawing Away. Nothing here takes pointer
- * input: a touch during the flight reaches Painting underneath, which the
- * sequence's own hold then refuses.
+ * The flight itself: the cover and the two sheets — see the User Experience
+ * LLD's Putting the Drawing Away. Nothing here takes pointer input: a touch
+ * during the flight reaches Painting underneath, which the sequence's own hold
+ * then refuses.
  */
 @Composable
-private fun BoxScope.SaveFeedbackBelowButton(
+private fun BoxScope.SaveFlight(
     state: SaveFeedbackState,
     canvasSize: Size,
     buttonBounds: Rect,
@@ -298,35 +297,41 @@ private fun BoxScope.SaveFailureFlashOverlay(
     buttonBounds: Rect,
 ) {
     val flash = state.flash.value
-    if (state.flashHeld || flash > 0f) {
-        // Grown from the button rather than washed over the screen, so the
-        // failure is attributed to the control that was pressed. Scaling a
-        // full-screen rect about any interior point only grows it, so a scale
-        // of one already reaches every edge.
-        // @spec CANVAS-UX-033
-        val origin = if (buttonBounds.isEmpty || canvasSize.width <= 0f || canvasSize.height <= 0f) {
-            TransformOrigin.Center
-        } else {
-            TransformOrigin(buttonBounds.center.x / canvasSize.width, buttonBounds.center.y / canvasSize.height)
-        }
-        val spread = if (state.flashHeld) 1f else (flash / FlashSpreadFraction).coerceAtMost(1f)
-        // Brightens over the spread, then fades once it has arrived. A held
-        // flash does neither — it is already everywhere, at one brightness.
-        val flashAlpha = if (state.flashHeld) {
-            FlashPeakAlpha
-        } else {
+    // @spec CANVAS-UX-033
+    val layer = when {
+        // Already everywhere, at one brightness: nothing to spread, and so
+        // nowhere to spread it from.
+        state.flashHeld -> Modifier.graphicsLayer { alpha = FlashPeakAlpha }
+
+        flash > 0f -> {
+            // Grown from the button rather than washed over the screen, so the
+            // failure is attributed to the control that was pressed. Scaling a
+            // full-screen rect about any interior point only grows it, so a
+            // scale of one already reaches every edge.
+            val origin = if (buttonBounds.isEmpty || canvasSize.width <= 0f || canvasSize.height <= 0f) {
+                TransformOrigin.Center
+            } else {
+                TransformOrigin(buttonBounds.center.x / canvasSize.width, buttonBounds.center.y / canvasSize.height)
+            }
+            val spread = (flash / FlashSpreadFraction).coerceAtMost(1f)
+            // Brightens over the spread, then fades once it has arrived.
             val brightness = if (flash < FlashSpreadFraction) spread else 1f - (flash - FlashSpreadFraction) / (1f - FlashSpreadFraction)
-            brightness * FlashPeakAlpha
+            Modifier.graphicsLayer {
+                transformOrigin = origin
+                scaleX = spread
+                scaleY = spread
+                alpha = brightness * FlashPeakAlpha
+            }
         }
+
+        else -> null
+    }
+
+    if (layer != null) {
         Box(
             Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    transformOrigin = origin
-                    scaleX = spread
-                    scaleY = spread
-                    alpha = flashAlpha
-                }
+                .then(layer)
                 .zIndex(FlashZ)
                 .background(SaveFailureFlash, RoundedCornerShape(SaveFlashCorner))
                 .testTag(SAVE_FAILURE_FLASH_TEST_TAG)
