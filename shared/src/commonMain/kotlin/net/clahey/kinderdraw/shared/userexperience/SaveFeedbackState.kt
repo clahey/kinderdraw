@@ -29,9 +29,10 @@ private const val HELD_FLASH_MILLIS = 500L
  * Which movement is running. Each runs [SaveFeedbackState.progress] from 0 to 1.
  *
  * The order matters for layering as much as for motion: the sheet is drawn
- * above the button only during [Approach] and [Poise], and both boundaries of
- * that span fall where the sheet doesn't overlap the button, so neither change
- * of layer is visible. See [aboveButton].
+ * above the button while crossing to it, resting at it, and leaving it —
+ * [Approach], [Poise] and [Recede] — and both boundaries of that span fall
+ * where the sheet doesn't overlap the button, so neither change of layer is
+ * visible. See [aboveButton].
  */
 enum class SaveFlightLeg {
     /** Shrinking where it stands, until it no longer reaches the button. */

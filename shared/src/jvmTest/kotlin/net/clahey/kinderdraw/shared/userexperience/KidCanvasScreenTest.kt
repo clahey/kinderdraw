@@ -54,6 +54,7 @@ private fun ComposeUiTest.advanceUntil(frames: Int = 240, condition: () -> Boole
         if (condition()) return
         mainClock.advanceTimeByFrame()
     }
+    if (condition()) return
     throw AssertionError("condition still not met after $frames frames")
 }
 
