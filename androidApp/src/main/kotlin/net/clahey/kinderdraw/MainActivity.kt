@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import net.clahey.kinderdraw.shared.imagestorage.MediaStoreImageStorage
 import net.clahey.kinderdraw.shared.userexperience.KidCanvasScreen
+import net.clahey.kinderdraw.shared.userexperience.rememberReduceMotion
 import net.clahey.kinderdraw.shared.userexperience.seedFrom
 
 /**
@@ -19,10 +20,16 @@ const val EXTRA_RANDOM_SEED: String = "net.clahey.kinderdraw.extra.RANDOM_SEED"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val imageStorage = MediaStoreImageStorage(applicationContext).let {
+            // Constant-folded false in release builds — see FailingImageStorage.
+            if (BuildConfig.FAIL_SAVES) FailingImageStorage(it) else it
+        }
         setContent {
             KidCanvasScreen(
-                imageStorage = MediaStoreImageStorage(applicationContext),
+                imageStorage = imageStorage,
                 seed = intent.randomSeed(),
+                // @spec CANVAS-UX-039
+                reduceMotion = rememberReduceMotion(),
             )
         }
     }

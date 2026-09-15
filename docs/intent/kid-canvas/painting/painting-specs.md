@@ -27,9 +27,7 @@
 ## Save and Clear
 
 - [x] **CANVAS-PAINT-008**: The system shall expose an operation that reports true only if no strokes have been recorded since the drawing surface was last cleared.
-- [x] **CANVAS-PAINT-009**: When the save operation is called without an id, the system shall render the current drawing to a raster image, write it to Image Storage (see the Image Storage LLD) as a new saved-drawing entry, and return that entry's id to the caller.
-- [x] **CANVAS-PAINT-017**: When the save operation is called with an id, the system shall render the current drawing to a raster image, write it to Image Storage as an update to the existing entry identified by that id rather than creating a new entry, and return that same id to the caller.
-- [x] **CANVAS-PAINT-012**: If the save operation's write to Image Storage fails, then the system shall report that failure to its own caller rather than treating the drawing as saved.
+- [x] **CANVAS-PAINT-025**: When the snapshot operation is called, the system shall render the current drawing to a raster image — off screen, at the drawing surface's size as of the most recent render — and return that image to the caller without writing it anywhere or altering the drawing in any way.
 - [x] **CANVAS-PAINT-010**: When the clear operation is called, the system shall discard all recorded strokes and reset the visible drawing surface to blank.
 - [x] **CANVAS-PAINT-013**: When the clear operation is called while one or more strokes are still in progress (their pointers haven't lifted), the system shall finalize each such stroke's points-so-far as a completed stroke, discard all of them along with everything else, and immediately begin a new stroke per interrupted pointer — each keyed to that same pointer, continuing from its current location and carrying forward that pointer's own already-resolved brush, without querying `StyleSettings` again. (A subsequent call to the isEmpty check reports false whenever at least one pointer was still down, since each replacement stroke already has one point — see CANVAS-PAINT-002.)
 

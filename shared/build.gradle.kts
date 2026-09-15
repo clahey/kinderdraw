@@ -47,6 +47,8 @@ kotlin {
                 implementation(libs.androidx.test.core)
                 implementation(libs.androidx.test.junit)
                 implementation(libs.junit)
+                implementation(libs.compose.ui.test)
+                implementation(libs.androidx.compose.ui.test.manifest)
             }
         }
     }

@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import net.clahey.kinderdraw.shared.imagestorage.ImageStorage
 import net.clahey.kinderdraw.shared.paintingstyle.Point
 import net.clahey.kinderdraw.shared.paintingstyle.Stroke
 import net.clahey.kinderdraw.shared.paintingstyle.StyleSettings
@@ -70,17 +69,6 @@ class PaintingState(
     // @spec CANVAS-PAINT-008
     fun isEmpty(): Boolean = completedStrokes.isEmpty() && liveStrokes.isEmpty()
 
-    // @spec CANVAS-PAINT-009, CANVAS-PAINT-012, CANVAS-PAINT-017
-    suspend fun save(imageStorage: ImageStorage, id: String? = null): Result<String> {
-        val image = rasterize()
-        val result = if (id == null) {
-            imageStorage.create(image)
-        } else {
-            imageStorage.update(id, image)
-        }
-        return result.map { it.id }
-    }
-
     // @spec CANVAS-PAINT-010, CANVAS-PAINT-013, CANVAS-PAINT-016
     fun clear() {
         val interrupted = liveStrokes.toMap()
@@ -102,8 +90,15 @@ class PaintingState(
         }
     }
 
-    /** Rasterizes the drawing off-screen, at the size last seen in [render] — see the Painting LLD's Save and Clear. */
-    private fun rasterize(): ImageBitmap {
+    /**
+     * The current drawing as a raster image, rendered off-screen at the size
+     * last seen in [render] and written nowhere — see the Painting LLD's Save
+     * and Clear. [save] rasterizes through this too, so a caller wanting both
+     * an image and a stored copy renders the drawing twice; the two operations
+     * stay independent rather than one making the other correct.
+     */
+    // @spec CANVAS-PAINT-025
+    fun snapshot(): ImageBitmap {
         val width = lastRenderSize.width.toInt().coerceAtLeast(1)
         val height = lastRenderSize.height.toInt().coerceAtLeast(1)
         val image = ImageBitmap(width, height)

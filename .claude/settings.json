@@ -1,5 +1,11 @@
 {
   "enabledPlugins": {
     "linked-intent-dev@jszmajda-lid": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 ~/.claude/tools/lid_coherence.py)",
+      "Bash(~/Android/Sdk/platform-tools/adb devices -l)"
+    ]
   }
 }
