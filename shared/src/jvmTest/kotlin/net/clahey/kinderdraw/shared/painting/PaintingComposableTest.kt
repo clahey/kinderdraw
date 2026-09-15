@@ -113,7 +113,8 @@ class PaintingComposableTest {
         // handler above it depends on, and is the only half of this observable
         // from outside: recording a hover against a stroke that was never
         // started is already a no-op in PaintingState.
-        var hoverConsumed: Boolean? = null
+        var hovers = 0
+        var consumedHovers = 0
 
         setContent {
             Box(
@@ -123,7 +124,10 @@ class PaintingComposableTest {
                             // The Final pass runs after Painting has had the
                             // change, so consumption by it is visible here.
                             val change = awaitPointerEvent(PointerEventPass.Final).changes.single()
-                            if (!change.pressed) hoverConsumed = change.isConsumed
+                            if (!change.pressed) {
+                                hovers++
+                                if (change.isConsumed) consumedHovers++
+                            }
                         }
                     }
                 }
@@ -138,7 +142,8 @@ class PaintingComposableTest {
         onRoot().performMouseInput { moveTo(Offset(10f, 10f)) }
         onRoot().performMouseInput { moveTo(Offset(20f, 20f)) }
 
-        assertEquals(false, hoverConsumed, "the hover must reach Painting and come back unconsumed")
+        assertTrue(hovers > 0, "the hover must reach Painting at all")
+        assertEquals(0, consumedHovers, "and every one of them must come back unconsumed")
         assertFalse(lock.isHeld())
         assertTrue(state.isEmpty())
         assertEquals(brushQueriesBefore, settings.brushQueryCount, "a hovering pointer must not reach PaintingState")
