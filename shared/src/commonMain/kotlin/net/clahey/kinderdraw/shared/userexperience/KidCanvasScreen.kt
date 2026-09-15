@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import net.clahey.kinderdraw.shared.brand.BrandYellow
@@ -81,6 +82,12 @@ private val generationSaver: Saver<Int, Int> = Saver(
     save = { it },
     restore = { it + 1 },
 )
+
+// Painting, the cover, and the sheets all sit at zero and order by composition;
+// only the button and the two things that have to cross it need naming.
+private const val ButtonZ = 1f
+private const val AboveButtonZ = 2f
+private const val FlashZ = 3f
 
 /**
  * The bare surface between two sheets — not a stand-in for the canvas, which
@@ -144,10 +151,14 @@ fun KidCanvasScreen(
         // @spec CANVAS-UX-001, CANVAS-UX-035
         SaveFeedbackBelowButton(feedback, canvasSize, buttonBounds)
 
+        // @spec CANVAS-UX-033, CANVAS-UX-035
+        SaveFailureFlashOverlay(feedback, canvasSize, buttonBounds)
+
         // @spec CANVAS-UX-001, CANVAS-UX-019
         KidButton(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
+                .zIndex(ButtonZ)
                 .onGloballyPositioned { buttonBounds = it.boundsInParent() }
                 .testTag(NEW_PICTURE_TEST_TAG),
             lock = lock,
@@ -188,7 +199,7 @@ fun KidCanvasScreen(
 
                             if (snapshot == null) {
                                 // @spec CANVAS-UX-037
-                                if (!saved) feedback.flashOnce()
+                                if (!saved) feedback.holdFlash()
                             } else if (saved) {
                                 // The hop exists so the descent can pass
                                 // behind the button unseen.
@@ -230,20 +241,6 @@ fun KidCanvasScreen(
                 )
             }
         }
-
-        // The sheet outranks the chrome only while it is over at the button,
-        // by which point it is too small to hide it. Both ends of that span
-        // fall where the two don't overlap, so the change isn't visible.
-        // @spec CANVAS-UX-043
-        val departing = feedback.departing
-        if (departing != null && feedback.aboveButton) {
-            Sheet(
-                departing,
-                feedback.placement(canvasSize, buttonBounds),
-                feedback.borderAlpha(),
-                SAVE_FLIGHT_TEST_TAG,
-            )
-        }
     }
 }
 
@@ -265,19 +262,43 @@ private fun BoxScope.SaveFeedbackBelowButton(
     }
 
     val departing = state.departing
-    if (departing != null && !state.aboveButton) {
+    if (departing != null) {
         // @spec CANVAS-UX-040, CANVAS-UX-031, CANVAS-UX-032, CANVAS-UX-043
-        Sheet(departing, state.placement(canvasSize, buttonBounds), state.borderAlpha(), SAVE_FLIGHT_TEST_TAG)
+        Sheet(
+            departing,
+            state.placement(canvasSize, buttonBounds),
+            state.borderAlpha(),
+            Modifier
+                .zIndex(if (state.aboveButton) AboveButtonZ else 0f)
+                .testTag(SAVE_FLIGHT_TEST_TAG),
+        )
     }
 
     val arriving = state.arriving
     if (arriving != null) {
         // @spec CANVAS-UX-041
-        Sheet(arriving, state.placement(canvasSize, buttonBounds), state.borderAlpha(), SAVE_ARRIVAL_TEST_TAG)
+        Sheet(
+            arriving,
+            state.placement(canvasSize, buttonBounds),
+            state.borderAlpha(),
+            Modifier.testTag(SAVE_ARRIVAL_TEST_TAG),
+        )
     }
+}
 
+/**
+ * The failure burst, drawn over everything — the drawing, the flight, and the
+ * chrome. It is light coming off the button rather than a surface laid over
+ * the screen, and nothing in front of light occludes it.
+ */
+@Composable
+private fun BoxScope.SaveFailureFlashOverlay(
+    state: SaveFeedbackState,
+    canvasSize: Size,
+    buttonBounds: Rect,
+) {
     val flash = state.flash.value
-    if (flash > 0f) {
+    if (state.flashHeld || flash > 0f) {
         // Grown from the button rather than washed over the screen, so the
         // failure is attributed to the control that was pressed. Scaling a
         // full-screen rect about any interior point only grows it, so a scale
@@ -288,9 +309,15 @@ private fun BoxScope.SaveFeedbackBelowButton(
         } else {
             TransformOrigin(buttonBounds.center.x / canvasSize.width, buttonBounds.center.y / canvasSize.height)
         }
-        val spread = (flash / FlashSpreadFraction).coerceAtMost(1f)
-        // Brightens over the spread, then fades once it has arrived.
-        val brightness = if (flash < FlashSpreadFraction) spread else 1f - (flash - FlashSpreadFraction) / (1f - FlashSpreadFraction)
+        val spread = if (state.flashHeld) 1f else (flash / FlashSpreadFraction).coerceAtMost(1f)
+        // Brightens over the spread, then fades once it has arrived. A held
+        // flash does neither — it is already everywhere, at one brightness.
+        val flashAlpha = if (state.flashHeld) {
+            FlashPeakAlpha
+        } else {
+            val brightness = if (flash < FlashSpreadFraction) spread else 1f - (flash - FlashSpreadFraction) / (1f - FlashSpreadFraction)
+            brightness * FlashPeakAlpha
+        }
         Box(
             Modifier
                 .fillMaxSize()
@@ -298,8 +325,9 @@ private fun BoxScope.SaveFeedbackBelowButton(
                     transformOrigin = origin
                     scaleX = spread
                     scaleY = spread
-                    alpha = brightness * FlashPeakAlpha
+                    alpha = flashAlpha
                 }
+                .zIndex(FlashZ)
                 .background(SaveFailureFlash, RoundedCornerShape(SaveFlashCorner))
                 .testTag(SAVE_FAILURE_FLASH_TEST_TAG)
         )
@@ -322,11 +350,19 @@ private fun lerp(from: Placement, to: Placement, t: Float) = Placement(
 )
 
 @Composable
-private fun BoxScope.Sheet(image: ImageBitmap, placement: Placement, borderAlpha: Float, tag: String) {
+private fun BoxScope.Sheet(
+    image: ImageBitmap,
+    placement: Placement,
+    borderAlpha: Float,
+    modifier: Modifier = Modifier,
+) {
     Image(
         bitmap = image,
         contentDescription = null,
         contentScale = ContentScale.FillBounds,
+        // The caller's modifier goes on the inside, against convention: a test
+        // tag applied outside the layer below would report the sheet's
+        // untransformed bounds, which is to say the whole screen, always.
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer {
@@ -343,7 +379,7 @@ private fun BoxScope.Sheet(image: ImageBitmap, placement: Placement, borderAlpha
             // canvas is handed back through matches it exactly.
             // @spec CANVAS-UX-034, CANVAS-UX-038
             .border(SaveFlightBorderWidth, SaveFlightBorder.copy(alpha = borderAlpha))
-            .testTag(tag),
+            .then(modifier),
     )
 }
 
@@ -426,7 +462,7 @@ private const val ClearMargin = 0.92f
 /** How much of the burst's duration is spent expanding, the rest fading. */
 private const val FlashSpreadFraction = 0.3f
 
-private const val FlashPeakAlpha = 0.72f
+private const val FlashPeakAlpha = 0.75f
 
 /** Rounded, so the burst reads as a shape arriving rather than the screen washing over. */
 private val SaveFlashCorner = 56.dp

@@ -441,6 +441,11 @@ class KidCanvasScreenTest {
         onNodeWithTag(SAVE_FLIGHT_TEST_TAG).assertDoesNotExist()
         onNodeWithTag(SAVE_FLIGHT_COVER_TEST_TAG).assertDoesNotExist()
 
+        // Held rather than played: still there long after a burst of its own
+        // duration would have finished and gone.
+        repeat(20) { mainClock.advanceTimeByFrame() }
+        onNodeWithTag(SAVE_FAILURE_FLASH_TEST_TAG).assertExists()
+
         mainClock.autoAdvance = true
         waitForIdle()
         assertFalse(state.isEmpty())

@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val SHRINK_MILLIS = 160
@@ -22,6 +23,7 @@ private const val SLIDE_IN_MILLIS = 240
 private const val RECEDE_MILLIS = 220
 private const val GROW_MILLIS = 240
 private const val FLASH_MILLIS = 260
+private const val HELD_FLASH_MILLIS = 500L
 
 /**
  * Which movement is running. Each runs [SaveFeedbackState.progress] from 0 to 1.
@@ -85,6 +87,14 @@ class SaveFeedbackState {
 
     /** How far through the failure burst, 0 to 1. Zero means nothing is showing. */
     val flash = Animatable(0f)
+
+    /**
+     * Whether the flash is being held still rather than played — see
+     * [holdFlash]. A burst derives its spread and brightness from [flash]; a
+     * held one has neither to derive, so this is what shows it at all.
+     */
+    var flashHeld by mutableStateOf(false)
+        private set
 
     /**
      * Whether the sheet is drawn over the button rather than behind it, which
@@ -160,7 +170,7 @@ class SaveFeedbackState {
         coroutineScope {
             // Started at the turn and left to run on its own duration — it
             // paces nothing here and nothing here paces it.
-            launch { flashOnce() }
+            launch { playFlash() }
             // Paired with Grow the same way the outbound legs are paired.
             run(SaveFlightLeg.Recede, RECEDE_MILLIS, FastOutLinearInEasing)
             run(SaveFlightLeg.Grow, GROW_MILLIS, LinearOutSlowInEasing)
@@ -168,17 +178,33 @@ class SaveFeedbackState {
     }
 
     /**
-     * The failure burst, which also stands alone when motion is reduced and
-     * nothing travels. Runs 0 to 1; the screen derives both how far it has
+     * The failure burst. Runs 0 to 1; the screen derives both how far it has
      * spread from the button and how bright it is from that one value.
      */
-    // @spec CANVAS-UX-033, CANVAS-UX-037
-    suspend fun flashOnce() {
+    // @spec CANVAS-UX-033
+    suspend fun playFlash() {
         try {
             flash.snapTo(0f)
             flash.animateTo(1f, tween(FLASH_MILLIS, easing = LinearEasing))
         } finally {
             flash.snapTo(0f)
+        }
+    }
+
+    /**
+     * The same failure, held still, for when motion is reduced and nothing
+     * travels. A burst that expands, brightens and fades is itself motion, so
+     * this shows the screen at rest instead of animating a smaller version of
+     * the same thing — full spread, one brightness, held long enough to be
+     * caught by someone who wasn't watching when it appeared.
+     */
+    // @spec CANVAS-UX-037
+    suspend fun holdFlash() {
+        try {
+            flashHeld = true
+            delay(HELD_FLASH_MILLIS)
+        } finally {
+            flashHeld = false
         }
     }
 
