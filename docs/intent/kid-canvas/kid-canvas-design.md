@@ -39,7 +39,7 @@ graph TD
     Widgets -- interaction lock --> UX
     Painting -- interaction lock --> UX
     Store -- reads UX config --> UX
-    Painting -- writes drawings --> Store
+    UX -- writes drawings --> Store
 ```
 
 ## Key Design Decisions

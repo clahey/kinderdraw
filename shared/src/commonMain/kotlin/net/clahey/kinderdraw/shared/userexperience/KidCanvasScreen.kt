@@ -168,21 +168,25 @@ fun KidCanvasScreen(
                     // @spec CANVAS-UX-013, CANVAS-UX-036
                     state.clear()
                 } else {
-                    // Taken before the save, since a save that succeeds clears
-                    // the drawing this is a picture of.
+                    // Taken before the write, since a write that succeeds
+                    // clears the drawing this is a picture of. The same image
+                    // is what gets stored and what flies, so a press
+                    // rasterizes the drawing once.
                     // @spec CANVAS-UX-030
-                    val snapshot = if (reduceMotion) null else state.snapshot()
+                    val drawing = state.snapshot()
                     try {
                         coroutineScope {
                             // The lift commits to no outcome, so it runs while
                             // the write is still going rather than after it.
                             // @spec CANVAS-UX-040
-                            val lifting = snapshot?.let { launch { feedback.lift(it) } }
+                            val lifting =
+                                if (reduceMotion) null else launch { feedback.lift(drawing) }
 
-                            // Retrying a failed save can't duplicate the drawing:
-                            // a failed create leaves no entry behind (IMAGES-019).
+                            // Retrying can't duplicate the drawing: a failed
+                            // create leaves no entry behind (IMAGES-019).
                             // @spec CANVAS-UX-011, CANVAS-UX-028
-                            val saved = state.save(imageStorage).isSuccess || state.save(imageStorage).isSuccess
+                            val saved = imageStorage.create(drawing).isSuccess ||
+                                imageStorage.create(drawing).isSuccess
                             // A drawing that couldn't be saved stays on the
                             // canvas — clearing it would destroy the only copy.
                             // Clearing as soon as the write lands, rather than
@@ -196,7 +200,7 @@ fun KidCanvasScreen(
                             // than a stall.
                             lifting?.join()
 
-                            if (snapshot == null) {
+                            if (reduceMotion) {
                                 // @spec CANVAS-UX-037
                                 if (!saved) feedback.holdFlash()
                             } else if (saved) {

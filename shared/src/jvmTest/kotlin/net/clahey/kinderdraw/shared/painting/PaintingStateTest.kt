@@ -7,8 +7,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.runBlocking
-import net.clahey.kinderdraw.shared.imagestorage.FakeImageStorage
 import net.clahey.kinderdraw.shared.paintingstyle.FakeBrush
 import net.clahey.kinderdraw.shared.paintingstyle.FakeStyleSettings
 import net.clahey.kinderdraw.shared.paintingstyle.Point
@@ -258,26 +256,6 @@ class PaintingStateTest {
         assertEquals(Color.Blue, image.toPixelMap()[0, 0])
     }
 
-    // @spec CANVAS-PAINT-009
-    @Test
-    fun saveRasterizesTheDrawingAtItsLastRenderedSizeAndWritesItToImageStorage() = runBlocking {
-        val brush = FakeBrush()
-        val settings = FakeStyleSettings(brush = brush)
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope(width = 40, height = 24) { with(painting) { render() } }
-
-        val result = painting.save(imageStorage)
-
-        assertTrue(result.isSuccess)
-        val image = imageStorage.createCalls.single()
-        assertEquals(40, image.width)
-        assertEquals(24, image.height)
-    }
-
     // @spec CANVAS-PAINT-025
     @Test
     fun snapshotRendersTheDrawingAtItsLastRenderedSizeWithoutStoringIt() {
@@ -324,133 +302,41 @@ class PaintingStateTest {
         assertEquals(3, brush.renderCalls.size)
     }
 
-    // @spec CANVAS-PAINT-009
+    // @spec CANVAS-PAINT-025
     @Test
-    fun saveBeforeAnyRenderCallDoesNotCrash() = runBlocking {
+    fun snapshotBeforeAnyRenderCallDoesNotCrash() {
         val settings = FakeStyleSettings(brush = FakeBrush())
         val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(pointerA, p0)
         painting.onPointerUp(pointerA)
-        // No render() call before save() — the drawing surface's size is unknown.
+        // No render() call yet — the drawing surface's size is unknown, so
+        // rasterization falls back to a minimal image rather than failing.
 
-        val result = painting.save(imageStorage)
+        val image = painting.snapshot()
 
-        assertTrue(result.isSuccess)
+        assertEquals(1, image.width)
+        assertEquals(1, image.height)
     }
 
-    // @spec CANVAS-PAINT-009
+    // @spec CANVAS-PAINT-025
     @Test
-    fun saveRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() = runBlocking {
+    fun snapshotRerendersEveryStrokeThroughItsBrushRatherThanCapturingOnScreenPixels() {
         val brush = FakeBrush()
         val settings = FakeStyleSettings(brush = brush)
         val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
 
         painting.onPointerDown(pointerA, p0)
         painting.onPointerMove(pointerA, p1)
         painting.onPointerUp(pointerA)
         testDrawScope { with(painting) { render() } }
 
-        painting.save(imageStorage)
+        painting.snapshot()
 
-        // The on-screen render() call above already recorded one entry;
-        // save()'s own off-screen rasterization replays the same render path.
+        // The on-screen render() call above already recorded one entry; the
+        // off-screen rasterization replays the same render path.
         assertEquals(2, brush.renderCalls.size)
         assertEquals(listOf(p0, p1), brush.renderCalls.last())
-    }
-
-    // @spec CANVAS-PAINT-016
-    @Test
-    fun saveIncludesTheResolvedBackgroundMatchingOnScreenRendering() = runBlocking {
-        val settings = FakeStyleSettings(background = Color.Red)
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope(width = 4, height = 4) { with(painting) { render() } }
-
-        painting.save(imageStorage)
-
-        // Reuses the same render() path as on-screen, so the saved image's
-        // background matches by construction, not by keeping two paths in sync.
-        val savedImage = imageStorage.createCalls.single()
-        assertEquals(Color.Red, savedImage.toPixelMap()[0, 0])
-    }
-
-    // @spec CANVAS-PAINT-009
-    @Test
-    fun saveWithoutAnIdCreatesANewEntryAndReturnsItsId() = runBlocking {
-        val settings = FakeStyleSettings()
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope { with(painting) { render() } }
-
-        val result = painting.save(imageStorage)
-
-        assertEquals(Result.success("id"), result)
-        assertEquals(1, imageStorage.createCalls.size)
-        assertTrue(imageStorage.updateCalls.isEmpty())
-    }
-
-    // @spec CANVAS-PAINT-017
-    @Test
-    fun saveWithAnIdUpdatesTheExistingEntryAndReturnsTheSameId() = runBlocking {
-        val settings = FakeStyleSettings()
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope { with(painting) { render() } }
-
-        val result = painting.save(imageStorage, id = "existing-id")
-
-        assertEquals(Result.success("existing-id"), result)
-        assertEquals("existing-id", imageStorage.updateCalls.single().first)
-        assertTrue(imageStorage.createCalls.isEmpty())
-    }
-
-    // @spec CANVAS-PAINT-012, CANVAS-PAINT-017
-    @Test
-    fun saveWithAnIdReportsImageStorageFailureToItsOwnCaller() = runBlocking {
-        val settings = FakeStyleSettings()
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-        imageStorage.failNextUpdate("no such entry")
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope { with(painting) { render() } }
-
-        val result = painting.save(imageStorage, id = "missing-id")
-
-        assertTrue(result.isFailure)
-        assertEquals("no such entry", result.exceptionOrNull()?.message)
-    }
-
-    // @spec CANVAS-PAINT-012
-    @Test
-    fun saveReportsImageStorageFailureToItsOwnCallerRatherThanTreatingTheDrawingAsSaved() = runBlocking {
-        val brush = FakeBrush()
-        val settings = FakeStyleSettings(brush = brush)
-        val painting = PaintingState(settings)
-        val imageStorage = FakeImageStorage()
-        imageStorage.failNextCreate("disk full")
-
-        painting.onPointerDown(pointerA, p0)
-        painting.onPointerUp(pointerA)
-        testDrawScope { with(painting) { render() } }
-
-        val result = painting.save(imageStorage)
-
-        assertTrue(result.isFailure)
-        assertEquals("disk full", result.exceptionOrNull()?.message)
     }
 
     // @spec CANVAS-PAINT-013

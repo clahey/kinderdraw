@@ -17,6 +17,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import net.clahey.kinderdraw.shared.imagestorage.FakeImageStorage
@@ -191,6 +192,9 @@ class KidCanvasScreenTest {
         waitForIdle()
 
         assertEquals(2, imageStorage.createCalls.size, "one attempt plus exactly one retry")
+        // The same raster both times — the drawing is photographed once per press.
+        // @spec CANVAS-UX-030
+        assertSame(imageStorage.createCalls[0], imageStorage.createCalls[1])
     }
 
     // @spec CANVAS-UX-028, CANVAS-UX-013
