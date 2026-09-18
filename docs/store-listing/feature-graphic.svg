@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Editable master for the Play Console's 1024x500 feature graphic.
+
+  Colours are taken as-authored from the source sketch, not from docs/brand.md:
+  the field gradient runs #065196 -> #043868 upper-left to lower-right, the
+  scribble is brand light blue into brand green, ending in a brand yellow dot.
+
+  Unlike the store icon, the feature graphic must carry NO alpha channel, so the
+  export strips it.
+
+  Export:
+    rsvg-convert -w 1024 -h 500 feature-graphic.svg -o feature-graphic.png
+    magick feature-graphic.png -alpha remove -alpha off feature-graphic.png
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1024" height="500"
+     viewBox="0 0 1024 500">
+
+  <style>
+    .wordmark { font: 132px sans-serif; fill: #FFFFFF; }
+    .tagline  { font: 46px sans-serif;  fill: #FFFFFF; }
+  </style>
+
+  <defs>
+    <linearGradient id="field" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="500">
+      <stop offset="0" stop-color="#065196"/>
+      <stop offset="1" stop-color="#043868"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1024" height="500" fill="url(#field)"/>
+
+  <path d="M-20,296
+           C130,296 180,272 300,272
+           C410,272 470,300 552,296
+           C596,293 606,250 668,250
+           C721,250 735,270 738,302"
+        fill="none" stroke="#47AADC" stroke-width="17"
+        stroke-linecap="butt" stroke-linejoin="round"/>
+
+  <path d="M738,302
+           C739,307 739,313 739,319
+           C739,361 709,392 677,392
+           C645,392 631,378 628,361
+           C624,330 668,309 734,302
+           C774,297 822,298 872,306"
+        fill="none" stroke="#148244" stroke-width="17"
+        stroke-linecap="butt" stroke-linejoin="round"/>
+
+  <circle cx="872" cy="306" r="8.5" fill="#FCD214"/>
+
+  <text class="wordmark" x="56" y="258">KinderDraw</text>
+  <text class="tagline"  x="60" y="340">Big fingers welcome.</text>
+</svg>

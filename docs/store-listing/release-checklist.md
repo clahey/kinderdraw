@@ -28,7 +28,8 @@ ImageMagick is needed separately for the alpha and format handling below.
 - [x] `PRIVACY.md` public at the URL Play's listing will point at:
       <https://github.com/clahey/kinderdraw/blob/main/PRIVACY.md>. It has to keep
       resolving for as long as the listing lives, which is why it hangs off `main`
-- [ ] Confirm `versionName` / `versionCode` for the first upload
+- [x] Confirm `versionName` / `versionCode` for the first upload — versionCode 1,
+      versionName 0.1
 
 The beta cuts from `main` and carries whatever has merged when the steps below
 are done; no feature gates it, and none is waited for — see the Publishing LLD's
@@ -53,18 +54,19 @@ Play's requirements, which the verify steps below check against:
 
 - [x] Verify: `magick identify docs/store-listing/icon-512.png` reports
       `512x512` and `TrueColorAlpha`
-- [ ] Author `docs/store-listing/feature-graphic.svg` — navy field, the scribble,
+- [x] Author `docs/store-listing/feature-graphic.svg` — navy field, the scribble,
       wordmark, and "Big fingers welcome." Keep type and artwork in separate
       bands rather than overlapping
-- [ ] Export it:
+- [x] Export it:
       `rsvg-convert -w 1024 -h 500 docs/store-listing/feature-graphic.svg -o docs/store-listing/feature-graphic.png`
-- [ ] Strip the alpha Play rejects:
+- [x] Strip the alpha Play rejects:
       `magick docs/store-listing/feature-graphic.png -alpha remove -alpha off docs/store-listing/feature-graphic.png`
-- [ ] Verify: `magick identify -verbose …` shows `1024x500` and no alpha channel
-- [ ] **(you)** Capture screenshots on a device or emulator, of whatever the app
+- [x] Verify: `magick identify -verbose …` shows `1024x500` and no alpha channel
+- [x] **(you)** Capture screenshots on a device or emulator, of whatever the app
       is at that point. Screenshots are cheap to replace on a live listing, so
       they don't wait for a feature — see the Publishing LLD's decision on what
-      the first beta contains
+      the first beta contains. Captured phone (1080×1920, `shot-*`) and 7" tablet
+      (`tablet7-*`) sets under `screenshots/` at seed `crayon`
 
 ## 4. Signing key
 
