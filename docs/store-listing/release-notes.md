@@ -12,4 +12,7 @@ characters per release, per language.
 > about: anything your child managed to get stuck on, and any drawing that
 > went missing.
 
-Not yet uploaded.
+Uploaded to the closed testing track. The bundle was built and signed through
+Android Studio's own build-and-sign dialog rather than the `bundleRelease`
+path in the release checklist, so that path remains unexercised — see the
+Publishing LLD's Signing.

@@ -52,6 +52,14 @@ Three artifacts state the same fact about the app in three registers, and Play r
 
 The app's actual data behavior makes all of these easy to satisfy honestly rather than by argument. It declares no network permission, contains no analytics or ad SDKs, and writes drawings to the device's own shared photo album, where the user's own gallery and backup apps govern them (see the Image Storage LLD's Android Storage Backend).
 
+### Upload warnings that are expected
+
+Play raises two warnings on every bundle this project uploads. Both are structural rather than defects, and neither has an action behind it — they are recorded here so each release doesn't re-investigate them.
+
+**No deobfuscation file.** R8 is off (see Decisions), so nothing is obfuscated and no mapping file can exist. Crash traces arrive readable already. Play raises this whether or not the bundle is obfuscated.
+
+**Native code without debug symbols.** The bundle carries one native library, `libandroidx.graphics.path.so`, roughly 10KB per ABI. It arrives transitively — `androidx.compose.ui:ui-graphics` depends on `androidx.graphics:graphics-path` — and Google ships it already stripped: no symbol table, no debug info. So there are no symbols to supply, and setting `ndk.debugSymbolLevel` would package nothing. A crash inside it is symbolicable only by Google.
+
 ## Signing
 
 Gradle signs the release bundle. The `release` `signingConfig` in `androidApp/build.gradle.kts` reads `KINDERDRAW_KEYSTORE` and `KINDERDRAW_KEYSTORE_PASSWORD`, which come from `~/.gradle/gradle.properties` — outside the repository, since the committed `gradle.properties` holds ordinary build settings and must never hold these. `KINDERDRAW_KEY_ALIAS` defaults to `kinderdraw`, and the key password falls back to the store password, which is what a PKCS12 keystore requires anyway.
@@ -64,6 +72,8 @@ Two ways to sign without leaving the password anywhere on the machine, both supp
 
 - Read it into the environment, unechoed, and let Gradle pick it up: `read -rs` into `ORG_GRADLE_PROJECT_KINDERDRAW_KEYSTORE_PASSWORD`, export, then build. The value never becomes a command argument, so it stays out of both the process table and shell history. A stale daemon may need `--no-daemon`.
 - Set nothing, take the unsigned bundle, and run `jarsigner` against it, which prompts on its own terminal.
+
+Android Studio's own build-and-sign dialog is a fourth route, outside this configuration entirely: it prompts for the keystore and password in the IDE and signs the bundle itself, ignoring the Gradle properties above. That is how v0.1 reached Play. It is not the intended route — it can't be scripted, it leaves no record of what it signed with, and it is unavailable on a machine without the IDE — but it means **the Gradle signing path above has still never produced a shipped bundle.** Whoever runs it first should expect to debug it rather than trust it.
 
 **Gradle itself cannot prompt for the password**, and this is worth recording because it looks obviously possible and is not. Three separate things block it: `System.console()` is null under Gradle — in the daemon *and* under `--no-daemon` — because Gradle redirects the build's stdin; Gradle forces `java.awt.headless=true`, killing a Swing-dialog fallback, and that is not reliably overridable through `org.gradle.jvmargs`; and `storePassword` is assigned at configuration time, so a prompting `signingConfig` fires on every invocation that configures the release variant rather than only on the one that signs. Opening `/dev/tty` directly, with `stty -echo` around it, does bypass the first two, but only under `--no-daemon` and without addressing the third. The two routes above achieve the same goal without any of it.
 
