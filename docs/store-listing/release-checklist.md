@@ -55,8 +55,9 @@ Play's requirements, which the verify steps below check against:
 - [x] Verify: `magick identify docs/store-listing/icon-512.png` reports
       `512x512` and `TrueColorAlpha`
 - [x] Author `docs/store-listing/feature-graphic.svg` — navy field, the scribble,
-      wordmark, and "Big fingers welcome." Keep type and artwork in separate
-      bands rather than overlapping
+      wordmark, and "Big fingers welcome." The scribble spans the canvas and
+      passes behind the wordmark; the slogan sits clear of it below. See the
+      Publishing LLD's Decisions for why it isn't banded
 - [x] Export it:
       `rsvg-convert -w 1024 -h 500 docs/store-listing/feature-graphic.svg -o docs/store-listing/feature-graphic.png`
 - [x] Strip the alpha Play rejects:
