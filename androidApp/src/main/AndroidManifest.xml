@@ -3,10 +3,8 @@
     <!--
       @spec CANVAS-UX-051
 
-      The kid canvas is presented with no chrome of the platform's own — see
-      the User Experience LLD's Screen Composition. Only the action bar is
-      removable through a theme; hiding the system bars needs the window's
-      insets controller, in WindowPresentation.kt.
+      No action bar over the drawing surface — see the User Experience LLD's
+      Screen Composition.
 
       Light is what makes the window background white, which is the color the
       canvas itself resolves to today (see DefaultStyleSettings), so nothing

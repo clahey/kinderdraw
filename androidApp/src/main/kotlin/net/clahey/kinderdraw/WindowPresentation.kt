@@ -6,10 +6,8 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 
 /**
- * Presents this window with nothing of the platform's own around the kid
- * canvas — see the User Experience LLD's Screen Composition. Removing the
- * action bar is the theme's job (see the manifest); this covers
- * what no theme attribute can express.
+ * Hides the system bars and extends the window into the display cutout — see
+ * the User Experience LLD's Screen Composition.
  *
  * Safe to apply repeatedly, which is what keeps the presentation a standing
  * condition rather than a launch-time act.
@@ -35,8 +33,8 @@ internal fun Window.presentWithoutChrome() {
 // @spec CANVAS-UX-052, CANVAS-UX-054
 internal fun WindowInsetsController.presentWithoutChrome() {
     hide(WindowInsets.Type.systemBars())
-    // Transient rather than swipe-to-restore: a revealed bar is overlaid and
-    // leaves on its own, so the drawing surface never changes size under a
-    // hand already moving on it, and no swipe can strand it visible.
+    // Transient rather than swipe-to-restore: a revealed bar overlays the
+    // screen and leaves on its own, so no swipe can strand one over the
+    // drawing or resize the surface under a hand already moving on it.
     systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 }
