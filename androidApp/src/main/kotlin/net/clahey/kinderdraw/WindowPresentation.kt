@@ -8,7 +8,7 @@ import android.view.WindowManager
 /**
  * Presents this window with nothing of the platform's own around the kid
  * canvas — see the User Experience LLD's Screen Composition. Removing the
- * action bar is the theme's job (see `res/values/themes.xml`); this covers
+ * action bar is the theme's job (see the manifest); this covers
  * what no theme attribute can express.
  *
  * Safe to apply repeatedly, which is what keeps the presentation a standing

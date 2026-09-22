@@ -1,5 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      @spec CANVAS-UX-051
+
+      The kid canvas is presented with no chrome of the platform's own — see
+      the User Experience LLD's Screen Composition. Only the action bar is
+      removable through a theme; hiding the system bars needs the window's
+      insets controller, in WindowPresentation.kt.
+
+      Light is what makes the window background white, which is the color the
+      canvas itself resolves to today (see DefaultStyleSettings), so nothing
+      flashes between the window appearing and Compose's first frame.
+    -->
     <application
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -7,7 +19,7 @@
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:theme="@style/Theme.KinderDraw">
+        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
         <activity
             android:name=".MainActivity"
             android:exported="true">
