@@ -4,6 +4,11 @@
 
 - [x] **CANVAS-UX-001**: When the kid canvas screen is composed, the system shall render Painting full-bleed as the drawing surface and compose each KidWidget as chrome anchored along the screen's edges on top of it, so the chrome covers only the drawing surface's margins and never its interior. Transient presentation the screen itself raises over the drawing surface — the save feedback of CANVAS-UX-031 through CANVAS-UX-034 — is not a KidWidget: it accepts no input (see CANVAS-UX-035) and outlives no gesture. Where each part of it sits relative to the chrome is that part's own to specify.
 
+- [x] **CANVAS-UX-051**: When the kid canvas screen is shown, the system shall present it with no platform-provided title or action bar.
+- [x] **CANVAS-UX-052**: When the kid canvas screen is shown, the system shall hide the platform's status and navigation bars, so the drawing surface spans the entire display including any display cutout.
+- [x] **CANVAS-UX-053**: When the window returns to the foreground — from another app, a system dialog, a device unlock, or an OS-driven recreation — the system shall hide the platform's status and navigation bars again, rather than leaving whatever chrome the OS restored.
+- [x] **CANVAS-UX-054**: When the user reveals the platform's status or navigation bars by swiping from a screen edge, the system shall show them overlaid on the kid canvas without resizing the drawing surface, and hide them again with no further input.
+
 ## Input Arbitration
 
 - [x] **CANVAS-UX-002**: When a pointer touches down inside some KidWidget's hit region and the lock is unheld, the system shall grant a hold to that KidWidget, which claims the pointer.
@@ -56,7 +61,8 @@
 
 ## Lifecycle Behavior — OS Navigation and Process Lifecycle
 
-- [D] **CANVAS-UX-015**: When the OS back gesture or button fires while the kid canvas is shown, the system shall consume it and not navigate the toddler out of the kid canvas.
+- [x] **CANVAS-UX-015**: When the OS back gesture or button fires while the kid canvas is shown with nothing raised in front of it, the system shall consume it and not navigate the toddler out of the kid canvas. An overlay addressed to an adult — none exists today — is dismissed by back instead, which returns to the canvas rather than leaving it.
+- [x] **CANVAS-UX-055**: When the OS back gesture or button fires while a stroke or a KidWidget's action is live, the system shall consume it without requesting or waiting on a hold of the interaction lock, leaving the live gesture to finish unaffected. Being an invariant over the handler's own body — which neither takes the lock nor reads it — rather than a triggered behavior, this carries no test of its own.
 - [D] **CANVAS-UX-016**: When the OS recreates the process's UI within its own saved-instance-state mechanism (a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current in-progress drawing exactly as it stood, without invoking the New Picture save path. Deferred alongside Painting's CANVAS-PAINT-011 and CANVAS-PAINT-019, which this depends on.
 
 ## Interaction Feedback

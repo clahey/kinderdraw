@@ -20,6 +20,8 @@ const val EXTRA_RANDOM_SEED: String = "net.clahey.kinderdraw.extra.RANDOM_SEED"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // @spec CANVAS-UX-052
+        window.presentWithoutChrome()
         val imageStorage = MediaStoreImageStorage(applicationContext).let {
             // Constant-folded false in release builds — see FailingImageStorage.
             if (BuildConfig.FAIL_SAVES) FailingImageStorage(it) else it
@@ -32,6 +34,17 @@ class MainActivity : ComponentActivity() {
                 reduceMotion = rememberReduceMotion(),
             )
         }
+    }
+
+    /**
+     * The OS restores its bars across some transitions — an unlock, a system
+     * dialog, a return from another app — so the presentation is re-applied
+     * every time the window comes back rather than only at launch.
+     */
+    // @spec CANVAS-UX-053
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) window.presentWithoutChrome()
     }
 }
 

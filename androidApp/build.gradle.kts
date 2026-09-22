@@ -78,6 +78,14 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests {
+            // The window presentation under test resolves through the app's
+            // theme, which is a resource.
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 kotlin {
@@ -91,4 +99,9 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.compose.material3:material3")
+
+    testImplementation(kotlin("test"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.junit)
 }

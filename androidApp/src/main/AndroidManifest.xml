@@ -6,7 +6,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
-        android:dataExtractionRules="@xml/data_extraction_rules">
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:theme="@style/Theme.KinderDraw">
         <activity
             android:name=".MainActivity"
             android:exported="true">
