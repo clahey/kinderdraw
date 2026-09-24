@@ -8,9 +8,6 @@ import android.view.WindowManager
 /**
  * Hides the system bars and extends the window into the display cutout — see
  * the User Experience LLD's Screen Composition.
- *
- * Safe to apply repeatedly, which is what keeps the presentation a standing
- * condition rather than a launch-time act.
  */
 // @spec CANVAS-UX-052
 internal fun Window.presentWithoutChrome() {
