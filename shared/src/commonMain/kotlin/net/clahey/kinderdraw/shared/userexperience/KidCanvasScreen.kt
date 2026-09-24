@@ -138,9 +138,8 @@ fun KidCanvasScreen(
     val lock = remember { InteractionLock() }
     val feedback = remember { SaveFeedbackState() }
 
-    // Claiming back is the whole point; the empty body is what ignoring it
-    // looks like. It takes no hold on the lock, so a stroke or a KidWidget's
-    // action underway is left to finish untouched.
+    // Empty on purpose: back is claimed so the platform won't act on it. Takes
+    // no lock hold, so a live stroke or activation is unaffected.
     // @spec CANVAS-UX-015, CANVAS-UX-055
     BackHandler(enabled = true) {}
 

@@ -16,15 +16,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The window the kid canvas is presented in — see the User Experience LLD's
+ * The window the kid canvas is presented in. See the User Experience LLD's
  * Screen Composition.
  *
- * Hiding the bars is asserted against [RecordingInsetsController] rather than
- * the activity's real window: Robolectric serves a genuine `InsetsController`,
- * but nothing there is attached to a display, so a `hide()` never reaches
- * `rootWindowInsets` and the call leaves no trace to assert on. The behavior
- * it sets alongside does read back, which is what the activity-level tests
- * below use to tell that the presentation was applied at all.
+ * Hiding is asserted against [RecordingInsetsController] because Robolectric's
+ * `InsetsController` isn't attached to a display, so `hide()` leaves nothing to
+ * read back. `systemBarsBehavior` and `layoutInDisplayCutoutMode` do read back,
+ * so the activity's own window covers the rest.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
@@ -77,8 +75,7 @@ class WindowPresentationTest {
     fun presentsTheCanvasAgainWhenTheWindowRegainsFocus() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         val window = controller.get().window
-        // There is nothing to restore unless launching set it in the first
-        // place — and this is the only place that gets asserted.
+        // Also the only check that launching applied it at all.
         assertEquals(
             WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE,
             window.insetsController!!.systemBarsBehavior,

@@ -9,12 +9,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Back never takes the toddler out of the kid canvas — see the User Experience
+ * Back never takes the toddler out of the kid canvas. See the User Experience
  * LLD's OS Navigation and Process Lifecycle.
  *
- * The handler itself is shared code inside `KidCanvasScreen`; these run against
- * the Android shell because what's worth proving is that the platform's own
- * back dispatch reaches it, which only a real activity can show.
+ * The handler is shared code inside `KidCanvasScreen`, but only a real activity
+ * shows that Android's back dispatch reaches it.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])

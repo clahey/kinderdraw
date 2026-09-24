@@ -3,12 +3,11 @@
     <!--
       @spec CANVAS-UX-051
 
-      No action bar over the drawing surface — see the User Experience LLD's
+      No action bar over the drawing surface. See the User Experience LLD's
       Screen Composition.
 
-      Light is what makes the window background white, which is the color the
-      canvas itself resolves to today (see DefaultStyleSettings), so nothing
-      flashes between the window appearing and Compose's first frame.
+      Light gives the window a white background, matching the canvas (see
+      DefaultStyleSettings), so nothing flashes before Compose's first frame.
     -->
     <application
         android:label="@string/app_name"

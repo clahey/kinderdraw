@@ -81,8 +81,7 @@ android {
 
     testOptions {
         unitTests {
-            // The window presentation under test resolves through the app's
-            // theme, which is a resource.
+            // Robolectric needs the merged resources to resolve the theme.
             isIncludeAndroidResources = true
         }
     }

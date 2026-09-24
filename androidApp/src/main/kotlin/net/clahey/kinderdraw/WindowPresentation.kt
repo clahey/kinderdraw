@@ -6,32 +6,26 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 
 /**
- * Hides the system bars and extends the window into the display cutout — see
+ * Hides the system bars and extends the window into the display cutout. See
  * the User Experience LLD's Screen Composition.
  */
 // @spec CANVAS-UX-052
 internal fun Window.presentWithoutChrome() {
-    // A cutout is display the drawing surface should reach, not a region to
-    // letterbox around. The platform honors this only for a fullscreen
-    // window, which hiding the bars below is what makes this one.
+    // Only takes effect on a fullscreen window; hiding the bars below is what
+    // makes it one.
     attributes = attributes.apply {
         layoutInDisplayCutoutMode =
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
     }
-    // Before the window is attached this is a PendingInsetsController, which
-    // buffers the request and replays it onto the real one at attach — so a
-    // call from onCreate lands on the first frame rather than being dropped.
+    // Before attach this is a PendingInsetsController, which replays these
+    // calls once the real controller exists.
     decorView.windowInsetsController?.presentWithoutChrome()
 }
 
-/**
- * Hides the system bars and asks for them back only on loan.
- */
+/** Hides the system bars, leaving them revealable only transiently. */
 // @spec CANVAS-UX-052, CANVAS-UX-054
 internal fun WindowInsetsController.presentWithoutChrome() {
     hide(WindowInsets.Type.systemBars())
-    // Transient rather than swipe-to-restore: a revealed bar overlays the
-    // screen and leaves on its own, so no swipe can strand one over the
-    // drawing or resize the surface under a hand already moving on it.
+    // A revealed bar overlays the canvas and re-hides itself, so nothing resizes.
     systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 }

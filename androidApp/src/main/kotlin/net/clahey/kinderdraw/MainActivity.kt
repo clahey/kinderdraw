@@ -37,9 +37,8 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * The OS restores its bars across some transitions — an unlock, a system
-     * dialog, a return from another app — so the presentation is re-applied
-     * every time the window comes back rather than only at launch.
+     * The OS restores its bars after an unlock, a system dialog, or a return
+     * from another app.
      */
     // @spec CANVAS-UX-053
     override fun onWindowFocusChanged(hasFocus: Boolean) {
