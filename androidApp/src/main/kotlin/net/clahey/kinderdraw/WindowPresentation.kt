@@ -21,9 +21,9 @@ internal fun Window.presentWithoutChrome() {
         layoutInDisplayCutoutMode =
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
     }
-    // A window installs its decor lazily and serves the insets controller from
-    // it, so asking for the decor first is what lets this run from onCreate
-    // and not only once the window is already up.
+    // Before the window is attached this is a PendingInsetsController, which
+    // buffers the request and replays it onto the real one at attach — so a
+    // call from onCreate lands on the first frame rather than being dropped.
     decorView.windowInsetsController?.presentWithoutChrome()
 }
 
