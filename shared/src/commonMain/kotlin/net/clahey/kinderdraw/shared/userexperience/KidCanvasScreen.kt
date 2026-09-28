@@ -18,7 +18,9 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -113,6 +115,8 @@ private val SaveFlightBorderWidth = 2.dp
  * Experience LLD's Seeding the Sampled Colors.
  */
 // @spec CANVAS-UX-045, CANVAS-UX-046, CANVAS-UX-047, CANVAS-UX-048, CANVAS-UX-049, CANVAS-UX-050
+// For BackHandler, below.
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun KidCanvasScreen(
     imageStorage: ImageStorage,
@@ -133,6 +137,11 @@ fun KidCanvasScreen(
     // @spec CANVAS-UX-024
     val lock = remember { InteractionLock() }
     val feedback = remember { SaveFeedbackState() }
+
+    // Empty on purpose: back is claimed so the platform won't act on it. Takes
+    // no lock hold, so a live stroke or activation is unaffected.
+    // @spec CANVAS-UX-015, CANVAS-UX-055
+    BackHandler(enabled = true) {}
 
     // Where the drawing travels from and to. Both are this screen's own
     // layout, so no control has to report its position outward.

@@ -21,6 +21,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.compose.ui.backhandler)
             implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.coroutines.core)
         }
