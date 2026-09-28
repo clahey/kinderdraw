@@ -61,8 +61,8 @@
 
 ## Lifecycle Behavior — OS Navigation and Process Lifecycle
 
-- [x] **CANVAS-UX-015**: When the OS back gesture or button fires while the kid canvas is shown with nothing raised in front of it, the system shall consume it and not navigate the toddler out of the kid canvas. An overlay addressed to an adult — none exists today — is dismissed by back instead, which returns to the canvas rather than leaving it.
-- [x] **CANVAS-UX-055**: When the OS back gesture or button fires while a stroke or a KidWidget's action is live, the system shall consume it without requesting or waiting on a hold of the interaction lock, leaving the live gesture to finish unaffected. Being an invariant over the handler's own body — which neither takes the lock nor reads it — rather than a triggered behavior, this carries no test of its own.
+- [x] **CANVAS-UX-015**: When the OS back gesture or button fires while the kid canvas is shown with nothing raised in front of it, the system shall consume it and not navigate the toddler out of the kid canvas.
+- [x] **CANVAS-UX-055**: When the OS back gesture or button fires while a stroke or a KidWidget's action is live, the system shall consume it without requesting or waiting on a hold of the interaction lock, leaving the live gesture to finish unaffected. Being an invariant over the handler's own body rather than a triggered behavior, this carries no test of its own.
 - [D] **CANVAS-UX-016**: When the OS recreates the process's UI within its own saved-instance-state mechanism (a configuration change, brief backgrounding, or process death within that scope), the system shall preserve the current in-progress drawing exactly as it stood, without invoking the New Picture save path. Deferred alongside Painting's CANVAS-PAINT-011 and CANVAS-PAINT-019, which this depends on.
 
 ## Interaction Feedback
