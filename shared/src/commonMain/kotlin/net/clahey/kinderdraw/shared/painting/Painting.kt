@@ -2,7 +2,11 @@ package net.clahey.kinderdraw.shared.painting
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
@@ -19,16 +23,31 @@ import net.clahey.kinderdraw.shared.userexperience.swallowGesture
  * against [state]. It takes [lock] for the span of its own gesture: a refusal
  * means some other component is mid-gesture, and Painting simply starts
  * nothing (see the Painting LLD's Holding the Lock).
+ *
+ * [reservedInsets] is the region the platform reserves for its own gesture
+ * navigation; a stroke doesn't start inside its bottom edge (see the Painting
+ * LLD's System Gesture Coexistence). A caller wanting a strip other than the
+ * platform's — a test, on a host that reserves nothing — passes its own.
  */
 @Composable
 fun Painting(
     state: PaintingState,
     lock: InteractionLock,
     modifier: Modifier = Modifier,
+    reservedInsets: WindowInsets = WindowInsets.mandatorySystemGestures,
 ) {
+    // Read through a State so the gesture loop always sees the current strip
+    // without restarting — which mid-stroke would cancel the gesture and drop
+    // the hold with it.
+    val currentInsets by rememberUpdatedState(reservedInsets)
     Canvas(
         modifier = modifier
             .pointerInput(state, lock) {
+                // Pointers that touched down inside the strip the platform
+                // reserves along the bottom edge, held outside the gesture loop
+                // so a pointer stays suppressed for as long as it is down even
+                // if the loop starts a fresh gesture around it.
+                val suppressedPointers = mutableSetOf<PointerId>()
                 awaitEachGesture {
                     // One gesture spans however many pointers are
                     // concurrently down — see the Painting LLD's Composable
@@ -38,12 +57,32 @@ fun Painting(
                     try {
                         do {
                             val event = awaitPointerEvent()
+                            // Where a stroke starts is what's tested, so a
+                            // stroke already under way draws through the strip.
+                            // @spec CANVAS-PAINT-026, CANVAS-PAINT-029
+                            // @spec CANVAS-PAINT-030, CANVAS-PAINT-031
+                            val reservedTop = size.height - currentInsets.getBottom(this)
+                            for (change in event.changes) {
+                                if (change.changedToDownIgnoreConsumed() && change.position.y >= reservedTop) {
+                                    suppressedPointers += change.id
+                                }
+                            }
+                            // A suppressed pointer is no part of the gesture: it
+                            // asks for no hold, reaches no stroke, and is left
+                            // unconsumed for whatever else wants it.
+                            // @spec CANVAS-PAINT-027, CANVAS-PAINT-028
+                            val claimed = event.changes.filterNot { it.id in suppressedPointers }
+                            // Its lift ends it, and keeps the set from growing
+                            // for the composable's whole life.
+                            suppressedPointers.removeAll { id ->
+                                event.changes.any { it.id == id && !it.pressed }
+                            }
                             // Only a touch-down starts a gesture worth asking
                             // about: a hovering pointer must never take the
                             // lock, and a pointer joining a gesture already
                             // held needs no second request.
                             // @spec CANVAS-PAINT-018, CANVAS-PAINT-022
-                            if (hold == null && event.changes.any { it.changedToDownIgnoreConsumed() }) {
+                            if (hold == null && claimed.any { it.changedToDownIgnoreConsumed() }) {
                                 hold = lock.tryAcquire()
                                 if (hold == null) {
                                     event.changes.forEach { it.consume() }
@@ -53,7 +92,7 @@ fun Painting(
                             }
                             val down = mutableListOf<PointerId>()
                             val up = mutableListOf<PointerId>()
-                            for (change in event.changes) {
+                            for (change in claimed) {
                                 when {
                                     change.changedToDownIgnoreConsumed() -> {
                                         change.consume()
