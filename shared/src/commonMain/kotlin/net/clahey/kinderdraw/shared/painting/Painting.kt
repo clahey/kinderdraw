@@ -61,9 +61,12 @@ fun Painting(
                             // stroke already under way draws through the strip.
                             // @spec CANVAS-PAINT-026, CANVAS-PAINT-029
                             // @spec CANVAS-PAINT-030, CANVAS-PAINT-031
-                            val reservedTop = size.height - currentInsets.getBottom(this)
+                            val reserved = currentInsets.getBottom(this)
                             for (change in event.changes) {
-                                if (change.changedToDownIgnoreConsumed() && change.position.y >= reservedTop) {
+                                // A platform reserving nothing suppresses
+                                // nothing, whatever the bottom row's coordinate.
+                                val inStrip = reserved > 0 && change.position.y >= size.height - reserved
+                                if (change.changedToDownIgnoreConsumed() && inStrip) {
                                     suppressedPointers += change.id
                                 }
                             }
