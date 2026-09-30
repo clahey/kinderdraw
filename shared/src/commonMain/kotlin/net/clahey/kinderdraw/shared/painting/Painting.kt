@@ -43,16 +43,17 @@ fun Painting(
     Canvas(
         modifier = modifier
             .pointerInput(state, lock) {
-                // Pointers that touched down inside the strip the platform
-                // reserves along the bottom edge, held outside the gesture loop
-                // so a pointer stays suppressed for as long as it is down even
-                // if the loop starts a fresh gesture around it.
-                val suppressedPointers = mutableSetOf<PointerId>()
                 awaitEachGesture {
                     // One gesture spans however many pointers are
                     // concurrently down — see the Painting LLD's Composable
                     // Shape — and one hold covers all of it.
                     val trackedPointers = mutableSetOf<PointerId>()
+                    // Pointers that touched down inside the strip the platform
+                    // reserves along the bottom edge. Scoped to the gesture,
+                    // which is sound because awaitEachGesture waits for every
+                    // pointer to lift before beginning another — so no pointer
+                    // outlives the set that suppressed it.
+                    val suppressedPointers = mutableSetOf<PointerId>()
                     var hold: InteractionLock.Hold? = null
                     try {
                         do {
@@ -75,11 +76,6 @@ fun Painting(
                             // unconsumed for whatever else wants it.
                             // @spec CANVAS-PAINT-027, CANVAS-PAINT-028
                             val claimed = event.changes.filterNot { it.id in suppressedPointers }
-                            // Its lift ends it, and keeps the set from growing
-                            // for the composable's whole life.
-                            suppressedPointers.removeAll { id ->
-                                event.changes.any { it.id == id && !it.pressed }
-                            }
                             // Only a touch-down starts a gesture worth asking
                             // about: a hovering pointer must never take the
                             // lock, and a pointer joining a gesture already
