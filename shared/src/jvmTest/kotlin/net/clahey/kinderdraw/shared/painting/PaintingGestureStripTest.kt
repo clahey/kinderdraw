@@ -140,6 +140,27 @@ class PaintingGestureStripTest {
         assertFalse(state.isEmpty())
     }
 
+    // @spec CANVAS-PAINT-028
+    @Test
+    fun suppressesAPointerOnlyForAsLongAsItStaysDown() = runComposeUiTest {
+        val settings = FakeStyleSettings(brush = FakeBrush())
+        val state = PaintingState(settings)
+
+        setContent { StripPainting(state) }
+
+        // One finger on the canvas keeps the gesture open throughout, so the
+        // suppressed pointer below lifts without the gesture ending.
+        onRoot().performTouchInput { down(0, center) }
+        onRoot().performTouchInput { down(1, bottomCenter) }
+        onRoot().performTouchInput { up(1) }
+        assertEquals(1, settings.brushQueryCount, "the strip touch drew nothing while it was down")
+
+        // That pointer is gone, so nothing about it should reach the next touch
+        // that happens to carry the same id.
+        onRoot().performTouchInput { down(1, center) }
+        assertEquals(2, settings.brushQueryCount, "a later pointer reusing the id must draw")
+    }
+
     // @spec CANVAS-PAINT-029
     @Test
     fun goesOnRecordingAStrokeThatMovesIntoTheStrip() = runComposeUiTest {

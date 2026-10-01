@@ -49,10 +49,9 @@ fun Painting(
                     // Shape — and one hold covers all of it.
                     val trackedPointers = mutableSetOf<PointerId>()
                     // Pointers that touched down inside the strip the platform
-                    // reserves along the bottom edge. Scoped to the gesture,
-                    // which is sound because awaitEachGesture waits for every
-                    // pointer to lift before beginning another — so no pointer
-                    // outlives the set that suppressed it.
+                    // reserves along the bottom edge. Emptied as they lift, and
+                    // scoped to one gesture, which between them cover every way
+                    // a suppressed pointer can go away.
                     val suppressedPointers = mutableSetOf<PointerId>()
                     var hold: InteractionLock.Hold? = null
                     try {
@@ -76,6 +75,16 @@ fun Painting(
                             // unconsumed for whatever else wants it.
                             // @spec CANVAS-PAINT-027, CANVAS-PAINT-028
                             val claimed = event.changes.filterNot { it.id in suppressedPointers }
+                            // A lift ends that pointer's suppression, once the
+                            // lift itself has been excluded above. A gesture
+                            // outlives any one pointer, so keeping the id would
+                            // suppress a later pointer that reused it. A strip
+                            // touch with nothing else down exits the loop before
+                            // its lift arrives here; the set's gesture scope
+                            // covers that one.
+                            suppressedPointers.removeAll { id ->
+                                event.changes.any { it.id == id && !it.pressed }
+                            }
                             // Only a touch-down starts a gesture worth asking
                             // about: a hovering pointer must never take the
                             // lock, and a pointer joining a gesture already
